@@ -20,7 +20,9 @@ const CATEGORIES = [
     { id: "van", label: "Vans" },
 ];
 
-export default function SearchPage() {
+import { Suspense } from "react";
+
+function SearchContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -55,7 +57,7 @@ export default function SearchPage() {
     });
 
     return (
-        <main className="min-h-screen bg-slate-50 pb-32">
+        <>
             {/* Search Header */}
             <div className="bg-white border-b border-slate-200 sticky top-0 z-30">
                 <div className="max-w-7xl mx-auto px-4 py-4 space-y-4">
@@ -90,8 +92,8 @@ export default function SearchPage() {
                                 key={cat.id}
                                 onClick={() => setSelectedCategory(cat.id)}
                                 className={`whitespace-nowrap px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${selectedCategory === cat.id
-                                        ? "bg-primary-600 text-white border-primary-600 shadow-lg shadow-primary-200"
-                                        : "bg-white text-slate-500 border-slate-100 hover:border-primary-200 hover:text-primary-600"
+                                    ? "bg-primary-600 text-white border-primary-600 shadow-lg shadow-primary-200"
+                                    : "bg-white text-slate-500 border-slate-100 hover:border-primary-200 hover:text-primary-600"
                                     }`}
                             >
                                 {cat.label}
@@ -138,7 +140,16 @@ export default function SearchPage() {
                     </div>
                 )}
             </div>
+        </>
+    );
+}
 
+export default function SearchPage() {
+    return (
+        <main className="min-h-screen bg-slate-50 pb-32">
+            <Suspense fallback={<SkeletonGrid />}>
+                <SearchContent />
+            </Suspense>
             <MobileNav />
         </main>
     );

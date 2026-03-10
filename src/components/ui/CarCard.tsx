@@ -10,7 +10,7 @@ interface Car {
     year: number;
     imageUrls: string[];
     status: "available" | "reserved" | "sold";
-    mileage: number;
+    mileage?: number;
     transmission?: string;
     fuelType?: string;
 }
@@ -53,7 +53,7 @@ export default function CarCard({ car }: { car: Car }) {
                     <span>•</span>
                     <span>{car.fuelType || "Petrol"}</span>
                     <span>•</span>
-                    <span>{(car.mileage / 1000).toFixed(0)}k km</span>
+                    <span>{car.mileage != null ? `${(car.mileage / 1000).toFixed(0)}k km` : "—"}</span>
                 </div>
             </div>
         </Link>

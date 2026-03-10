@@ -4,8 +4,14 @@ import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
-import { X, Upload, CheckCircle2, Loader2, Trash2, AlertTriangle } from "lucide-react";
+import { X, Upload, CheckCircle2, Loader2, Trash2, AlertTriangle, AlertCircle } from "lucide-react";
 import Image from "next/image";
+
+// ─── Security constants ───────────────────────────────────────────────────────
+const MAX_FILE_SIZE_MB = 5;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+const MAX_IMAGES = 10;
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 interface EditVehicleFormProps {
     vehicle: any;
@@ -22,6 +28,37 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [success, setSuccess] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [fileError, setFileError] = useState<string | null>(null);
+    const [submitError, setSubmitError] = useState<string | null>(null);
+
+    // V-07 fix: validate file MIME type and size before accepting
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFileError(null);
+        if (!e.target.files) return;
+        const files = Array.from(e.target.files);
+
+        const totalImages = (vehicle.images?.length ?? 0) + files.length;
+        if (totalImages > MAX_IMAGES) {
+            setFileError(`Total images cannot exceed ${MAX_IMAGES}. You already have ${vehicle.images?.length ?? 0}.`);
+            e.target.value = "";
+            return;
+        }
+
+        for (const file of files) {
+            if (!ALLOWED_TYPES.includes(file.type)) {
+                setFileError("Only JPEG, PNG, and WebP images are allowed.");
+                e.target.value = "";
+                return;
+            }
+            if (file.size > MAX_FILE_SIZE_BYTES) {
+                setFileError(`Each image must be smaller than ${MAX_FILE_SIZE_MB} MB.`);
+                e.target.value = "";
+                return;
+            }
+        }
+
+        setSelectedFiles(files);
+    };
 
     const handleDelete = async () => {
         setIsDeleting(true);
@@ -31,8 +68,9 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
             setTimeout(() => {
                 onClose();
             }, 1500);
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
+            setSubmitError(err?.message ?? "Failed to delete listing.");
         } finally {
             setIsDeleting(false);
         }
@@ -40,7 +78,9 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        if (fileError) return;
         setIsSubmitting(true);
+        setSubmitError(null);
 
         const formData = new FormData(e.currentTarget);
         try {
@@ -83,8 +123,9 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
             setTimeout(() => {
                 onClose();
             }, 1500);
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
+            setSubmitError(err?.message ?? "Failed to update listing. Please try again.");
         } finally {
             setIsSubmitting(false);
         }
@@ -137,6 +178,12 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
                                 This action cannot be undone. Are you sure you want to remove this vehicle from the marketplace?
                             </p>
                         </div>
+                        {submitError && (
+                            <div className="flex items-center gap-2 p-3 bg-rose-50 text-rose-700 rounded-xl text-sm font-bold">
+                                <AlertCircle size={16} className="flex-shrink-0" />
+                                {submitError}
+                            </div>
+                        )}
                         <div className="flex gap-4 pt-4">
                             <button
                                 onClick={() => setShowDeleteConfirm(false)}
@@ -158,26 +205,26 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
                         <div className="grid grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Make</label>
-                                <input name="make" defaultValue={vehicle.make} required className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold" />
+                                <input name="make" defaultValue={vehicle.make} required maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold" />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Model</label>
-                                <input name="model" defaultValue={vehicle.model} required className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold" />
+                                <input name="model" defaultValue={vehicle.model} required maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold" />
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Year</label>
-                                <input name="year" type="number" defaultValue={vehicle.year} required className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold px-3" />
+                                <input name="year" type="number" defaultValue={vehicle.year} required min={1900} max={2030} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold px-3" />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1 whitespace-nowrap">Mileage (km)</label>
-                                <input name="mileage" type="number" defaultValue={vehicle.mileage} required className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold px-3" />
+                                <input name="mileage" type="number" defaultValue={vehicle.mileage} required min={0} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold px-3" />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Price (P)</label>
-                                <input name="price" type="number" defaultValue={vehicle.price} required className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold px-3" />
+                                <input name="price" type="number" defaultValue={vehicle.price} required min={1} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold px-3" />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Status</label>
@@ -226,17 +273,17 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Engine Size</label>
-                                <input name="engineSize" defaultValue={vehicle.engineSize} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold" placeholder="e.g. 2.8L" />
+                                <input name="engineSize" defaultValue={vehicle.engineSize} maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold" placeholder="e.g. 2.8L" />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Color</label>
-                                <input name="color" defaultValue={vehicle.color} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold" placeholder="e.g. White" />
+                                <input name="color" defaultValue={vehicle.color} maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold" placeholder="e.g. White" />
                             </div>
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Description</label>
-                            <textarea name="description" defaultValue={vehicle.description} rows={3} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold resize-none" />
+                            <textarea name="description" defaultValue={vehicle.description} rows={3} maxLength={2000} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold resize-none" />
                         </div>
 
                         <div className="space-y-4 pt-2">
@@ -250,29 +297,43 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
                             </div>
                         </div>
 
+                        {/* V-07 fix: restricted accept types + file size validation */}
                         <div className="pt-2">
                             <label className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center space-y-2 hover:border-primary-400 transition-colors cursor-pointer group block">
                                 <Upload className="mx-auto text-slate-300 group-hover:text-primary-500 transition-colors" size={24} />
                                 <p className="text-xs font-bold text-slate-500 group-hover:text-slate-900 transition-colors">
                                     {selectedFiles.length > 0 ? `${selectedFiles.length} file(s) selected` : "Add more photos"}
                                 </p>
+                                <p className="text-xs text-slate-400">JPEG, PNG or WebP · Max {MAX_FILE_SIZE_MB} MB each</p>
                                 <input
                                     type="file"
                                     multiple
-                                    accept="image/*"
+                                    accept="image/jpeg,image/png,image/webp"
                                     className="hidden"
-                                    onChange={(e) => {
-                                        if (e.target.files) {
-                                            setSelectedFiles(Array.from(e.target.files));
-                                        }
-                                    }}
+                                    onChange={handleFileChange}
                                 />
                             </label>
                         </div>
 
+                        {/* File validation error */}
+                        {fileError && (
+                            <div className="flex items-center gap-2 p-3 bg-rose-50 text-rose-700 rounded-xl text-sm font-bold">
+                                <AlertCircle size={16} className="flex-shrink-0" />
+                                {fileError}
+                            </div>
+                        )}
+
+                        {/* Submit error */}
+                        {submitError && (
+                            <div className="flex items-center gap-2 p-3 bg-rose-50 text-rose-700 rounded-xl text-sm font-bold">
+                                <AlertCircle size={16} className="flex-shrink-0" />
+                                {submitError}
+                            </div>
+                        )}
+
                         <button
                             type="submit"
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || !!fileError}
                             className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed py-4 flex items-center justify-center gap-2 sticky bottom-0 z-10"
                         >
                             {isSubmitting ? (
