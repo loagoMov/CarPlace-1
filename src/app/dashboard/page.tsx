@@ -23,7 +23,7 @@ export default function DealerDashboard() {
     const [syncError, setSyncError] = useState<string | null>(null);
 
     const dealership = useQuery(api.dealerships.getByClerkOrgId, organization ? { clerkOrgId: organization.id } : "skip");
-    const vehicles = useQuery(api.vehicles.list, dealership && dealership !== null ? { limit: 10 } : "skip");
+    const vehicles = useQuery(api.vehicles.getByDealerId, dealership && dealership !== null ? { dealerId: dealership._id } : "skip");
     const createDealership = useMutation(api.dealerships.create);
 
     // Auto-select the organization if the user has exactly 1 and none is selected currently.
