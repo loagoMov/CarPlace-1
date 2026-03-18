@@ -1,25 +1,37 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { UserButton, useOrganization, OrganizationSwitcher, CreateOrganization } from "@clerk/nextjs";
+import { UserButton, useOrganization, useOrganizationList, OrganizationSwitcher, CreateOrganization, OrganizationList } from "@clerk/nextjs";
 import MobileNav from "@/components/navigation/MobileNav";
 import { Plus, LayoutGrid, List, Settings, TrendingUp, Car, Building2, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { useMutation } from "convex/react";
 import AddVehicleForm from "@/components/dashboard/AddVehicleForm";
 import EditVehicleForm from "@/components/dashboard/EditVehicleForm";
 
 export default function DealerDashboard() {
     const { organization, isLoaded } = useOrganization();
+    const { userMemberships, isLoaded: isMembershipsLoaded, setActive } = useOrganizationList({
+        userMemberships: {
+            infinite: true,
+        },
+    });
     const [showCreateOrg, setShowCreateOrg] = useState(false);
     const [showAddVehicle, setShowAddVehicle] = useState(false);
     const [editingVehicle, setEditingVehicle] = useState<any>(null);
+    const [syncError, setSyncError] = useState<string | null>(null);
 
     const dealership = useQuery(api.dealerships.getByClerkOrgId, organization ? { clerkOrgId: organization.id } : "skip");
-    const vehicles = useQuery(api.vehicles.list, dealership ? { limit: 10 } : "skip");
+    const vehicles = useQuery(api.vehicles.list, dealership && dealership !== null ? { limit: 10 } : "skip");
     const createDealership = useMutation(api.dealerships.create);
+
+    // Auto-select the organization if the user has exactly 1 and none is selected currently.
+    useEffect(() => {
+        if (isMembershipsLoaded && !organization && userMemberships.data?.length === 1) {
+            setActive({ organization: userMemberships.data[0].organization.id });
+        }
+    }, [isMembershipsLoaded, organization, userMemberships, setActive]);
 
     useEffect(() => {
         if (organization && dealership === null) {
@@ -32,8 +44,9 @@ export default function DealerDashboard() {
                         clerkOrgId: organization.id,
                         logoUrl: organization.imageUrl,
                     });
-                } catch (error) {
+                } catch (error: any) {
                     console.error("Dealership sync failed", error);
+                    setSyncError(error?.message || "An error occurred while creating your dealership.");
                 }
             };
             syncDealership();
@@ -57,21 +70,21 @@ export default function DealerDashboard() {
                         </p>
                     </div>
 
-                    <div className="pt-4 flex flex-col gap-3">
-                        <OrganizationSwitcher
+                    <div className="pt-4 flex flex-col gap-6">
+                        {/* Clerk's OrganizationList handles showing and accepting invitations, plus creating new orgs */}
+                        <OrganizationList
                             hidePersonal={true}
                             afterSelectOrganizationUrl="/dashboard"
+                            afterCreateOrganizationUrl="/dashboard"
                             appearance={{
                                 elements: {
-                                    rootBox: "w-full",
-                                    organizationSwitcherTrigger: "w-full justify-center py-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all font-bold",
-                                    organizationSwitcherPopoverActionButton__createOrganization: "hidden",
+                                    rootBox: "w-full flex justify-center",
                                 }
                             }}
                         />
 
                         <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest pt-2">
-                            Please contact support if you haven't received your invitation yet.
+                            To view your new dealership, please accept any pending invites or create a new one above.
                         </p>
                     </div>
                 </div>
@@ -85,7 +98,15 @@ export default function DealerDashboard() {
             <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8 text-center">
                 <Loader2 className="w-12 h-12 text-primary-500 animate-spin mb-4 mx-auto" />
                 <h2 className="text-xl font-bold text-slate-900">Setting up your dealership...</h2>
-                <p className="text-slate-500 mt-2">Syncing your organization profile.</p>
+                {syncError ? (
+                    <div className="mt-4 p-4 bg-rose-50 border border-rose-200 rounded-2xl max-w-md">
+                        <p className="text-rose-700 font-bold text-sm">Sync Error</p>
+                        <p className="text-rose-600 mt-1 text-xs">{syncError}</p>
+                        <button onClick={() => window.location.reload()} className="mt-3 px-4 py-1.5 bg-rose-600 text-white rounded-lg text-xs font-bold">Refresh Page</button>
+                    </div>
+                ) : (
+                    <p className="text-slate-500 mt-2">Syncing your organization profile.</p>
+                )}
             </div>
         );
     }

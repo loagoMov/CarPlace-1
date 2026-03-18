@@ -44,7 +44,8 @@ export const create = mutation({
 
         // V-03 fix: the caller can only register their own Clerk org as a dealership.
         // This prevents user A from creating a dealership record impersonating org B.
-        const callerOrgId = identity.orgId ?? identity.subject;
+        // Note: The Clerk JWT might use orgID instead of orgId.
+        const callerOrgId = identity.orgID ?? identity.orgId ?? identity.subject;
         if (args.clerkOrgId !== callerOrgId) {
             throw new ConvexError("Forbidden: You can only register a dealership for your own organization.");
         }

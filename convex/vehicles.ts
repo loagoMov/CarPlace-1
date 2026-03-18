@@ -28,9 +28,9 @@ async function requireVehicleOwnership(ctx: any, vehicleId: any) {
     const dealership = await ctx.db.get(vehicle.dealerId);
     if (!dealership) throw new ConvexError("Dealership not found.");
 
-    // Clerk org ID is stored in the token under orgId claim, or falls back to
+    // Clerk org ID is stored in the token under orgId (or orgID) claim, or falls back to
     // the user's subject token when acting as an individual (no org).
-    const callerOrgId = identity.orgId ?? identity.subject;
+    const callerOrgId = identity.orgID ?? identity.orgId ?? identity.subject;
     if (dealership.clerkOrgId !== callerOrgId) {
         throw new ConvexError("Forbidden: You do not own this vehicle listing.");
     }
@@ -189,7 +189,7 @@ export const create = mutation({
         // V-03 fix: verify the caller belongs to the dealership org
         const dealership = await ctx.db.get(args.dealerId);
         if (!dealership) throw new ConvexError("Dealership not found.");
-        const callerOrgId = identity.orgId ?? identity.subject;
+        const callerOrgId = identity.orgID ?? identity.orgId ?? identity.subject;
         if (dealership.clerkOrgId !== callerOrgId) {
             throw new ConvexError("Forbidden: You cannot create listings for another dealership.");
         }
