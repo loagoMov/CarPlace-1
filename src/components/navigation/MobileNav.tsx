@@ -1,10 +1,15 @@
 import Link from "next/link";
-import { Home, Search, Store, User, LayoutDashboard, LogIn } from "lucide-react";
-import { useOrganization, useAuth, SignInButton } from "@clerk/nextjs";
+import { Home, Search, Store, User, LayoutDashboard, LogIn, Shield } from "lucide-react";
+import { useOrganization, useAuth, SignInButton, useUser } from "@clerk/nextjs";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 
 export default function MobileNav() {
     const { organization, isLoaded: orgLoaded } = useOrganization();
     const { isSignedIn, isLoaded: authLoaded } = useAuth();
+    const { user } = useUser();
+    const isGlobalAdmin = useQuery(api.dealerships.checkGlobalAdmin);
+
 
     return (
         <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md glass-nav rounded-2xl p-4 flex justify-around items-center z-50">
@@ -26,6 +31,14 @@ export default function MobileNav() {
                 <Link href="/dashboard" className="flex flex-col items-center gap-1 text-slate-500 hover:text-primary-600 transition-colors">
                     <LayoutDashboard size={24} />
                     <span className="text-[10px] font-medium">Dealer</span>
+                </Link>
+            )}
+
+            {/* Global Admin tab — only visible to registered CarPlace admins */}
+            {isGlobalAdmin && (
+                <Link href="/admin" className="flex flex-col items-center gap-1 text-primary-600 hover:text-primary-700 transition-colors">
+                    <Shield size={24} />
+                    <span className="text-[10px] font-bold">Admin</span>
                 </Link>
             )}
 

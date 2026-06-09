@@ -5,9 +5,10 @@ import { api } from "../../../convex/_generated/api";
 import MobileNav from "@/components/navigation/MobileNav";
 import CarCard from "@/components/ui/CarCard";
 import { SkeletonGrid } from "@/components/ui/SkeletonLoader";
-import { Search as SearchIcon, X, SlidersHorizontal, Car } from "lucide-react";
+import { Search as SearchIcon, X, SlidersHorizontal, Car, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 const CATEGORIES = [
     { id: "all", label: "All Vehicles" },
@@ -28,10 +29,14 @@ function SearchContent() {
 
     const initialQuery = searchParams.get("q") || "";
     const initialCategory = searchParams.get("category") || "all";
+    const initialPrice = searchParams.get("price") ? Number(searchParams.get("price")) : "";
 
     const [queryText, setQueryText] = useState(initialQuery);
     const [selectedCategory, setSelectedCategory] = useState(initialCategory);
     const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
+    const [targetPrice, setTargetPrice] = useState<number | "">(initialPrice);
+    const [debouncedTargetPrice, setDebouncedTargetPrice] = useState<number | undefined>(initialPrice || undefined);
+    const [showFilters, setShowFilters] = useState(initialPrice !== "" || searchParams.get("filters") === "true");
 
     // Debounce search input
     useEffect(() => {
@@ -41,26 +46,36 @@ function SearchContent() {
         return () => clearTimeout(timer);
     }, [queryText]);
 
+    // Debounce price input
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedTargetPrice(targetPrice === "" ? undefined : Number(targetPrice));
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [targetPrice]);
+
     // Update URL on search/filter changes
     useEffect(() => {
         const params = new URLSearchParams();
         if (debouncedQuery) params.set("q", debouncedQuery);
         if (selectedCategory !== "all") params.set("category", selectedCategory);
+        if (debouncedTargetPrice) params.set("price", debouncedTargetPrice.toString());
 
         const queryString = params.toString();
         router.replace(queryString ? `/search?${queryString}` : "/search", { scroll: false });
-    }, [debouncedQuery, selectedCategory, router]);
+    }, [debouncedQuery, selectedCategory, debouncedTargetPrice, router]);
 
-    const vehicles = useQuery(api.vehicles.search, {
+    const vehicles = useQuery(api.vehicles.searchRanked, {
         queryText: debouncedQuery,
-        category: selectedCategory === "all" ? undefined : selectedCategory
+        category: selectedCategory === "all" ? undefined : selectedCategory,
+        targetPrice: debouncedTargetPrice,
     });
 
     return (
         <>
             {/* Search Header */}
             <div className="bg-white border-b border-slate-200 sticky top-0 z-30">
-                <div className="max-w-7xl mx-auto px-4 py-4 space-y-4">
+                <div className="max-w-7xl mx-auto px-4 py-4 space-y-3">
                     <div className="flex gap-3">
                         <div className="relative flex-1">
                             <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
@@ -80,10 +95,69 @@ function SearchContent() {
                                 </button>
                             )}
                         </div>
-                        <button className="p-3 bg-white border border-slate-200 rounded-2xl text-slate-600 hover:text-primary-600 transition-colors shadow-sm">
+                        <button
+                            onClick={() => setShowFilters(!showFilters)}
+                            className={`p-3 border rounded-2xl transition-colors shadow-sm ${showFilters ? 'bg-primary-50 border-primary-200 text-primary-600' : 'bg-white border-slate-200 text-slate-600 hover:text-primary-600'}`}
+                        >
                             <SlidersHorizontal size={20} />
                         </button>
                     </div>
+
+                    {/* ── AI Deal Finder CTA ── */}
+                    <Link
+                        href="/search/advanced"
+                        id="ai-deal-finder-btn"
+                        className="flex items-center justify-between w-full px-5 py-3 rounded-2xl text-white font-bold text-sm group relative overflow-hidden"
+                        style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)" }}
+                    >
+                        {/* animated shimmer */}
+                        <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                            style={{ background: "linear-gradient(135deg, #818cf8 0%, #a78bfa 50%, #c084fc 100%)" }}
+                        />
+                        <span className="relative flex items-center gap-2">
+                            {/* pulsing glow dot */}
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-60" />
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+                            </span>
+                            <Sparkles size={16} className="opacity-90" />
+                            <span>AI Deal Finder</span>
+                            <span className="text-white/60 font-normal text-xs ml-1">— tell us your budget & we'll find your perfect car</span>
+                        </span>
+                        <span className="relative text-white/70 text-xs font-black tracking-widest uppercase group-hover:text-white transition-colors">
+                            Try it →
+                        </span>
+                    </Link>
+
+                    {showFilters && (
+                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div>
+                                <label className="block text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">
+                                    Target Price (Pula)
+                                </label>
+                                <div className="flex gap-3 items-center">
+                                    <input
+                                        type="number"
+                                        placeholder="e.g., 150000"
+                                        className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold"
+                                        value={targetPrice}
+                                        onChange={(e) => setTargetPrice(e.target.value === "" ? "" : Number(e.target.value))}
+                                    />
+                                    {targetPrice && (
+                                        <button
+                                            onClick={() => setTargetPrice("")}
+                                            className="text-xs font-bold text-slate-400 hover:text-slate-600"
+                                        >
+                                            Clear
+                                        </button>
+                                    )}
+                                </div>
+                                <p className="text-[10px] text-slate-400 font-medium mt-1">
+                                    We rank vehicles matching your budget/price preference higher.
+                                </p>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Category Tabs */}
                     <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">

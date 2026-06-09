@@ -1,5 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v, ConvexError } from "convex/values";
+import { isGlobalAdmin } from "./utils";
+import { checkRateLimit, rateLimitKey, RATE_LIMITS } from "./rateLimit";
 
 // ─── Input length constants ─────────────────────────────────────────────────
 const MAX_SHORT = 50;
@@ -27,6 +29,20 @@ async function requireVehicleOwnership(ctx: any, vehicleId: any) {
 
     const dealership = await ctx.db.get(vehicle.dealerId);
     if (!dealership) throw new ConvexError("Dealership not found.");
+
+    // HIGH-01 fix: use the centralized isGlobalAdmin() from utils rather than
+    // an inline hardcoded email list that was out-of-sync with the env var.
+    const adminStatus = await isGlobalAdmin(ctx);
+    if (adminStatus) {
+        return { vehicle, dealership };
+    }
+
+    // Check dealership B2B email authorization
+    if (dealership.authorizedEmails && identity.email) {
+        if (!dealership.authorizedEmails.includes(identity.email)) {
+            throw new ConvexError("Forbidden: Your email is not registered as an authorized administrator for this dealership.");
+        }
+    }
 
     // Clerk org ID is stored in the token under orgId (or orgID) claim, or falls back to
     // the user's subject token when acting as an individual (no org).
@@ -73,8 +89,10 @@ export const getVehicle = query({
     handler: async (ctx, args) => {
         const car = await ctx.db.get(args.id);
         if (!car) return null;
+        const dealer = await ctx.db.get(car.dealerId);
         return {
             ...car,
+            dealer: dealer ? { name: dealer.name, location: dealer.location, phone: dealer.phone ?? "" } : null,
             imageUrls: (await Promise.all(
                 car.images.map(async (id) => await ctx.storage.getUrl(id))
             )).filter((url) => url !== null) as string[],
@@ -151,7 +169,13 @@ export const generateUploadUrl = mutation({
     args: {},
     handler: async (ctx) => {
         // V-06 fix: require auth before issuing upload URLs
-        await requireAuth(ctx);
+        // CRIT-03 fix: rate limit upload URL generation to prevent billing attacks
+        const identity = await requireAuth(ctx);
+        await checkRateLimit(
+            ctx,
+            rateLimitKey("upload", "user", identity.subject),
+            RATE_LIMITS.UPLOAD_URL
+        );
         return await ctx.storage.generateUploadUrl();
     },
 });
@@ -184,7 +208,13 @@ export const create = mutation({
     },
     handler: async (ctx, args) => {
         // V-02 fix: require authentication
+        // CRIT-03 fix: rate limit new vehicle creation
         const identity = await requireAuth(ctx);
+        await checkRateLimit(
+            ctx,
+            rateLimitKey("create_vehicle", "user", identity.subject),
+            RATE_LIMITS.CREATE_VEHICLE
+        );
 
         // V-03 fix: verify the caller belongs to the dealership org
         const dealership = await ctx.db.get(args.dealerId);
@@ -240,7 +270,16 @@ export const update = mutation({
     },
     handler: async (ctx, args) => {
         // V-02 + V-03 fix: require auth and ownership
+        // CRIT-03 fix: rate limit vehicle updates
         const { vehicle: existing } = await requireVehicleOwnership(ctx, args.id);
+        const identity = await ctx.auth.getUserIdentity();
+        if (identity) {
+            await checkRateLimit(
+                ctx,
+                rateLimitKey("update_vehicle", "user", identity.subject),
+                RATE_LIMITS.UPDATE_VEHICLE
+            );
+        }
 
         // V-08 fix: validate lengths
         if (args.make && args.make.length > MAX_SHORT) throw new ConvexError(`Make must be ≤ ${MAX_SHORT} characters.`);
@@ -271,7 +310,16 @@ export const remove = mutation({
     args: { id: v.id("vehicles") },
     handler: async (ctx, args) => {
         // V-02 + V-03 fix: require auth and ownership
+        // CRIT-03: deletions counted against update quota to prevent rapid mass-delete abuse
         const { vehicle: existing } = await requireVehicleOwnership(ctx, args.id);
+        const identity = await ctx.auth.getUserIdentity();
+        if (identity) {
+            await checkRateLimit(
+                ctx,
+                rateLimitKey("update_vehicle", "user", identity.subject),
+                RATE_LIMITS.UPDATE_VEHICLE
+            );
+        }
 
         // Clean up images from storage
         for (const storageId of existing.images) {
@@ -279,5 +327,240 @@ export const remove = mutation({
         }
 
         await ctx.db.delete(args.id);
+    },
+});
+
+export const searchRanked = query({
+    args: {
+        queryText: v.string(),
+        category: v.optional(v.string()),
+        targetPrice: v.optional(v.number()),
+    },
+    handler: async (ctx, args) => {
+        const safeQuery = args.queryText.slice(0, 100);
+
+        let results;
+        if (safeQuery === "") {
+            let q = ctx.db.query("vehicles");
+            if (args.category) {
+                results = await q.order("desc").take(100);
+                results = results.filter(v => v.category === args.category);
+            } else {
+                results = await q.order("desc").take(100);
+            }
+        } else {
+            let q = ctx.db
+                .query("vehicles")
+                .withSearchIndex("search_vehicles", (q) =>
+                    q.search("searchText", safeQuery)
+                );
+
+            results = await q.take(100);
+
+            if (args.category) {
+                results = results.filter(v => v.category === args.category);
+            }
+        }
+
+        // Fetch dealerships to avoid N+1 queries
+        const dealerIds = Array.from(new Set(results.map((r) => r.dealerId)));
+        const dealers = await Promise.all(dealerIds.map((id) => ctx.db.get(id)));
+        const dealerMap = new Map(dealers.filter((d) => d !== null).map((d) => [d!._id, d!]));
+
+        const scoredResults = await Promise.all(
+            results.map(async (car) => {
+                // 1. Relevance Score (50%)
+                let relevanceScore = 1.0;
+                if (safeQuery !== "") {
+                    const queryLower = safeQuery.toLowerCase().trim();
+                    const makeLower = car.make.toLowerCase();
+                    const modelLower = car.model.toLowerCase();
+                    if (makeLower === queryLower || modelLower === queryLower) {
+                        relevanceScore = 1.0;
+                    } else if (makeLower.includes(queryLower) || modelLower.includes(queryLower)) {
+                        relevanceScore = 0.8;
+                    } else {
+                        relevanceScore = 0.5;
+                    }
+                }
+
+                // 2. Dealer Trust (20%)
+                const dealer = dealerMap.get(car.dealerId);
+                const rating = dealer?.rating ?? 5.0;
+                const dealerTrustScore = rating / 5.0;
+
+                // 3. Price Proximity (20%)
+                let priceProximityScore = 1.0;
+                if (args.targetPrice && args.targetPrice > 0) {
+                    const diff = Math.abs(car.price - args.targetPrice);
+                    priceProximityScore = Math.max(0, 1 - diff / args.targetPrice);
+                }
+
+                // 4. Recency Boost (10%)
+                const ageInMs = Date.now() - car._creationTime;
+                const ageInDays = ageInMs / (1000 * 60 * 60 * 24);
+                const recencyScore = Math.max(0, 1 - ageInDays / 30);
+
+                const totalScore =
+                    relevanceScore * 0.5 +
+                    dealerTrustScore * 0.2 +
+                    priceProximityScore * 0.2 +
+                    recencyScore * 0.1;
+
+                const imageUrls = car.images
+                    ? (await Promise.all(
+                        car.images.map(async (id) => await ctx.storage.getUrl(id))
+                    )).filter((url) => url !== null) as string[]
+                    : [];
+
+                return {
+                    ...car,
+                    imageUrls,
+                    images: imageUrls,
+                    totalScore,
+                };
+            })
+        );
+
+        scoredResults.sort((a, b) => b.totalScore - a.totalScore);
+        return scoredResults;
+    },
+});
+
+export const getFeatured = query({
+    args: {},
+    handler: async (ctx) => {
+        const now = Date.now();
+        // Fetch active listings and filter by featuredUntil in memory to avoid Convex DB query filter panics
+        const results = await ctx.db
+            .query("vehicles")
+            .withIndex("by_status", (q) => q.eq("status", "available"))
+            .take(100);
+
+        const featured = results.filter(
+            (car) => car.featuredUntil !== undefined && car.featuredUntil !== null && car.featuredUntil > now
+        );
+
+        const mapped = await Promise.all(
+            featured.map(async (car) => {
+                const imageUrls = car.images
+                    ? (await Promise.all(
+                        car.images.map(async (id) => await ctx.storage.getUrl(id))
+                      )).filter((url) => url !== null) as string[]
+                    : [];
+                return {
+                    ...car,
+                    imageUrls,
+                    images: imageUrls,
+                };
+            })
+        );
+
+        // Random-sort to keep it dynamic
+        const shuffled = mapped.sort(() => Math.random() - 0.5);
+        return shuffled.slice(0, 5);
+    },
+});
+
+export const updateFeaturedStatus = mutation({
+    args: {
+        vehicleId: v.id("vehicles"),
+        timestamp: v.union(v.number(), v.null()),
+    },
+    handler: async (ctx, args) => {
+        const { vehicle } = await requireVehicleOwnership(ctx, args.vehicleId);
+
+        await ctx.db.patch(args.vehicleId, {
+            featuredUntil: args.timestamp ?? undefined,
+        });
+
+        return { success: true };
+    },
+});
+
+export const advancedSearch = query({
+    args: {
+        budgetMin:    v.optional(v.number()),
+        budgetMax:    v.optional(v.number()),
+        yearMin:      v.optional(v.number()),
+        yearMax:      v.optional(v.number()),
+        mileageMax:   v.optional(v.number()),
+        fuelType:     v.optional(v.string()),
+        transmission: v.optional(v.string()),
+        category:     v.optional(v.string()),
+        color:        v.optional(v.string()),
+        makeModel:    v.optional(v.string()),
+    },
+    handler: async (ctx, args) => {
+        const all = await ctx.db
+            .query("vehicles")
+            .withIndex("by_status", (q) => q.eq("status", "available"))
+            .take(300);
+
+        const dealerIds = Array.from(new Set(all.map((r) => r.dealerId)));
+        const dealers = await Promise.all(dealerIds.map((id) => ctx.db.get(id)));
+        const dealerMap = new Map(
+            dealers.filter((d) => d !== null).map((d) => [d!._id, d!])
+        );
+
+        const queryLower = (args.makeModel ?? "").toLowerCase().trim();
+
+        const scored = await Promise.all(
+            all.map(async (car) => {
+                // Hard filters
+                if (args.budgetMin  !== undefined && car.price < args.budgetMin)  return null;
+                if (args.budgetMax  !== undefined && car.price > args.budgetMax)  return null;
+                if (args.yearMin    !== undefined && car.year  < args.yearMin)    return null;
+                if (args.yearMax    !== undefined && car.year  > args.yearMax)    return null;
+                if (args.mileageMax !== undefined && (car.mileage ?? 0) > args.mileageMax) return null;
+                if (args.fuelType     && car.fuelType?.toLowerCase()     !== args.fuelType.toLowerCase())     return null;
+                if (args.transmission && car.transmission?.toLowerCase() !== args.transmission.toLowerCase()) return null;
+                if (args.category     && car.category                    !== args.category)                   return null;
+                if (args.color && !car.color?.toLowerCase().includes(args.color.toLowerCase())) return null;
+
+                // Soft scores
+                let budgetScore = 1.0;
+                if (args.budgetMin !== undefined && args.budgetMax !== undefined) {
+                    const mid = (args.budgetMin + args.budgetMax) / 2;
+                    const range = (args.budgetMax - args.budgetMin) || 1;
+                    budgetScore = Math.max(0, 1 - Math.abs(car.price - mid) / range);
+                } else if (args.budgetMax !== undefined) {
+                    budgetScore = car.price / args.budgetMax;
+                }
+
+                let textScore = 0.5;
+                if (queryLower) {
+                    const ml = car.make.toLowerCase();
+                    const mdl = car.model.toLowerCase();
+                    if (ml === queryLower || mdl === queryLower)               textScore = 1.0;
+                    else if (ml.includes(queryLower) || mdl.includes(queryLower)) textScore = 0.8;
+                    else                                                           textScore = 0.3;
+                }
+
+                const dealer = dealerMap.get(car.dealerId);
+                const dealerScore = (dealer?.rating ?? 5.0) / 5.0;
+
+                const ageDays = (Date.now() - car._creationTime) / 86400000;
+                const recencyScore = Math.max(0, 1 - ageDays / 60);
+
+                const matchScore =
+                    budgetScore  * 0.40 +
+                    textScore    * 0.30 +
+                    dealerScore  * 0.15 +
+                    recencyScore * 0.15;
+
+                const imageUrls = car.images
+                    ? (await Promise.all(
+                        car.images.map((id) => ctx.storage.getUrl(id))
+                    )).filter((u) => u !== null) as string[]
+                    : [];
+
+                return { ...car, imageUrls, images: imageUrls, matchScore };
+            })
+        );
+
+        const filtered = scored.filter((c) => c !== null) as NonNullable<(typeof scored)[number]>[];
+        filtered.sort((a, b) => b.matchScore - a.matchScore);
+        return filtered.slice(0, 60);
     },
 });

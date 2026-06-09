@@ -2,9 +2,14 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 // Routes that require a signed-in user
+// CRIT-02 fix: /admin was missing — added so unauthenticated users are
+// redirected to Clerk sign-in before the admin page shell is rendered.
+// The backend still enforces requireGlobalAdmin() on every query/mutation
+// (defense in depth), but the middleware prevents the page from loading at all.
 const isProtectedRoute = createRouteMatcher([
     "/dashboard(.*)",
     "/profile(.*)",
+    "/admin(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

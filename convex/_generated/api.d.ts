@@ -8,7 +8,13 @@
  * @module
  */
 
+import type * as crons from "../crons.js";
 import type * as dealerships from "../dealerships.js";
+import type * as featured from "../featured.js";
+import type * as rateLimit from "../rateLimit.js";
+import type * as reports from "../reports.js";
+import type * as searchHistory from "../searchHistory.js";
+import type * as utils from "../utils.js";
 import type * as vehicles from "../vehicles.js";
 
 import type {
@@ -18,7 +24,13 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  crons: typeof crons;
   dealerships: typeof dealerships;
+  featured: typeof featured;
+  rateLimit: typeof rateLimit;
+  reports: typeof reports;
+  searchHistory: typeof searchHistory;
+  utils: typeof utils;
   vehicles: typeof vehicles;
 }>;
 

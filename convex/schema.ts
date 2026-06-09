@@ -8,6 +8,9 @@ export default defineSchema({
         logoUrl: v.optional(v.string()),
         slug: v.string(),
         clerkOrgId: v.string(),
+        rating: v.optional(v.number()),
+        authorizedEmails: v.optional(v.array(v.string())),
+        phone: v.optional(v.string()),
     })
         .index("by_slug", ["slug"])
         .index("by_clerk_org_id", ["clerkOrgId"]),
@@ -42,6 +45,7 @@ export default defineSchema({
         color: v.optional(v.string()),
         // Concatenated field for fuzzy search across make + model
         searchText: v.optional(v.string()),
+        featuredUntil: v.optional(v.number()),
     })
         .index("by_dealer", ["dealerId"])
         .index("by_status", ["status"])
@@ -49,4 +53,69 @@ export default defineSchema({
             searchField: "searchText",
             filterFields: ["status"],
         }),
+
+    // ── Search history ───────────────────────────────────────────────────────
+    searchHistory: defineTable({
+        userId: v.string(),          // Clerk user ID
+        label: v.string(),           // Human-readable summary e.g. "Toyota SUV · P150k–300k"
+        budgetMin:    v.optional(v.number()),
+        budgetMax:    v.optional(v.number()),
+        yearMin:      v.optional(v.number()),
+        yearMax:      v.optional(v.number()),
+        mileageMax:   v.optional(v.number()),
+        fuelType:     v.optional(v.string()),
+        transmission: v.optional(v.string()),
+        category:     v.optional(v.string()),
+        color:        v.optional(v.string()),
+        makeModel:    v.optional(v.string()),
+    })
+        .index("by_user", ["userId"]),
+
+    // ── Reports ──────────────────────────────────────────────────────────────
+    reports: defineTable({
+        vehicleId:      v.id("vehicles"),
+        dealerId:       v.id("dealerships"),
+        reporterUserId: v.optional(v.string()),   // Clerk subject (null if guest)
+        reporterEmail:  v.optional(v.string()),
+        reason:         v.string(),               // predefined category
+        customMessage:  v.optional(v.string()),   // free-text details
+        status: v.union(
+            v.literal("open"),
+            v.literal("reviewed"),
+            v.literal("dismissed")
+        ),
+        adminNote:      v.optional(v.string()),   // admin-only internal note
+    })
+        .index("by_vehicle",  ["vehicleId"])
+        .index("by_dealer",   ["dealerId"])
+        .index("by_status",   ["status"]),
+
+    featuredApplications: defineTable({
+        vehicleId: v.id("vehicles"),
+        dealerId: v.id("dealerships"),
+        durationDays: v.number(), // 7, 14, 30
+        price: v.number(), // 200, 450, 600
+        status: v.union(
+            v.literal("pending"),
+            v.literal("waitlisted"),
+            v.literal("approved"),
+            v.literal("rejected"),
+            v.literal("expired"),
+            v.literal("revoked")
+        ),
+        appliedAt: v.number(),
+    })
+        .index("by_status", ["status"])
+        .index("by_dealer", ["dealerId"])
+        .index("by_vehicle", ["vehicleId"]),
+
+    // ── Rate limiting — token-bucket per user/action ──────────────────────────
+    // CRIT-03 fix: Tracks request counts per (key, time window) to enforce
+    // per-user rate limits on high-risk mutations without an external service.
+    rateLimits: defineTable({
+        key: v.string(),          // e.g. "report:user:abc123" or "upload:user:xyz"
+        count: v.number(),        // requests in current window
+        windowStart: v.number(),  // epoch ms when the current window opened
+    })
+        .index("by_key", ["key"]),
 });

@@ -4,13 +4,18 @@ import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { ChevronLeft, Share2, Heart, MessageCircle, MapPin, Calendar, Gauge, Fuel, Zap, SlidersHorizontal } from "lucide-react";
+import { ChevronLeft, Share2, Heart, MessageCircle, MapPin, Calendar, Gauge, Fuel, Zap, SlidersHorizontal, Flag } from "lucide-react";
 import MobileNav from "../../../components/navigation/MobileNav";
+import { useState } from "react";
+import dynamic from "next/dynamic";
+
+const ReportModal = dynamic(() => import("../../../components/ui/ReportModal"), { ssr: false });
 
 export default function VehicleDetails() {
     const params = useParams();
     const router = useRouter();
     const vehicle = useQuery(api.vehicles.getVehicle, { id: params.id as any });
+    const [isReportOpen, setIsReportOpen] = useState(false);
 
     if (!vehicle) {
         return (
@@ -21,6 +26,23 @@ export default function VehicleDetails() {
     }
 
     const images = (vehicle.imageUrls && vehicle.imageUrls.length > 0) ? vehicle.imageUrls : ["/placeholder-car.jpg"];
+
+    // Build WhatsApp deep-link with custom message
+    const dealerPhone = vehicle.dealer?.phone ?? "";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://car-place-1.vercel.app";
+    const listingUrl = typeof window !== "undefined"
+        ? window.location.href
+        : `${siteUrl}/listings/${params.id}`;
+    const whatsappMessage = encodeURIComponent(
+        `Hi ${vehicle.dealer?.name ?? "there"},\n\n` +
+        `I'm interested in the *${vehicle.year} ${vehicle.make} ${vehicle.model}* listed on Car Place.\n\n` +
+        `Price: *P ${vehicle.price.toLocaleString()}*\n` +
+        `Dealer: *${vehicle.dealer?.name ?? "Your Dealership"}*${vehicle.dealer?.location ? `, ${vehicle.dealer.location}` : ""}\n` +
+        (vehicle.mileage ? `Mileage: *${vehicle.mileage.toLocaleString()} km*\n` : "") +
+        `\nView Listing: ${listingUrl}\n\n` +
+        `Could you please provide more information and arrange a viewing? Thank you!`
+    );
+    const whatsappUrl = dealerPhone ? `https://wa.me/${dealerPhone}?text=${whatsappMessage}` : null;
 
     return (
         <main className="min-h-screen pb-32 bg-white lg:bg-slate-50">
@@ -43,6 +65,14 @@ export default function VehicleDetails() {
             </div>
 
             <div className="max-w-7xl mx-auto lg:mt-8 lg:px-8">
+                {/* Desktop Back Button */}
+                <button 
+                    onClick={() => router.back()}
+                    className="hidden lg:flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors mb-6"
+                >
+                    <ChevronLeft size={16} /> Back
+                </button>
+
                 <div className="flex flex-col lg:flex-row gap-8">
 
                     {/* Left Column: Sticky Gallery */}
@@ -78,7 +108,7 @@ export default function VehicleDetails() {
                                     {vehicle.make} <span className="text-primary-600">{vehicle.model}</span>
                                 </h1>
                                 <p className="text-sm font-medium text-slate-400 flex items-center gap-1">
-                                    <MapPin size={14} /> Available at Broadway Motors, Gaborone
+                                    <MapPin size={14} /> Available at {vehicle.dealer?.name || "Broadway Motors"}, {vehicle.dealer?.location || "Gaborone"}
                                 </p>
                             </div>
 
@@ -147,8 +177,10 @@ export default function VehicleDetails() {
                         {/* Action Buttons (Desktop) */}
                         <div className="hidden lg:grid grid-cols-2 gap-4 pt-8">
                             <button
-                                onClick={() => window.open(`https://wa.me/26771234567?text=Hi, I'm interested in the ${vehicle.year} ${vehicle.make} ${vehicle.model}`, '_blank')}
-                                className="flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white py-4 rounded-2xl font-black transition-all shadow-lg shadow-emerald-100"
+                                onClick={() => whatsappUrl && window.open(whatsappUrl, '_blank')}
+                                disabled={!whatsappUrl}
+                                title={!whatsappUrl ? "This dealer hasn't added a WhatsApp number yet" : undefined}
+                                className="flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white py-4 rounded-2xl font-black transition-all shadow-lg shadow-emerald-100"
                             >
                                 <MessageCircle size={20} />
                                 WhatsApp Dealer
@@ -160,6 +192,16 @@ export default function VehicleDetails() {
                                 Book a Visit
                             </button>
                         </div>
+
+                        <div className="hidden lg:flex items-center justify-end pt-2">
+                            <button
+                                onClick={() => setIsReportOpen(true)}
+                                className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-rose-500 transition-colors"
+                            >
+                                <Flag size={14} />
+                                Report fraudulent listing
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -167,8 +209,10 @@ export default function VehicleDetails() {
             {/* Mobile Action Bar */}
             <div className="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-100 p-4 grid grid-cols-2 gap-3 z-40 pb-safe">
                 <button
-                    onClick={() => window.open(`https://wa.me/26771234567?text=Hi, I'm interested in the ${vehicle.year} ${vehicle.make} ${vehicle.model}`, '_blank')}
-                    className="flex items-center justify-center gap-2 bg-emerald-500 text-white py-4 rounded-2xl font-black text-sm"
+                    onClick={() => whatsappUrl && window.open(whatsappUrl, '_blank')}
+                    disabled={!whatsappUrl}
+                    title={!whatsappUrl ? "This dealer hasn't added a WhatsApp number yet" : undefined}
+                    className="flex items-center justify-center gap-2 bg-emerald-500 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white py-4 rounded-2xl font-black text-sm"
                 >
                     <MessageCircle size={18} />
                     WhatsApp
@@ -181,18 +225,50 @@ export default function VehicleDetails() {
                 </button>
             </div>
 
+            {/* Mobile Report Listing Trigger (placed floating/fixed or subtly above MobileNav) */}
+            <div className="lg:hidden fixed bottom-20 left-4 z-40">
+                <button
+                    onClick={() => setIsReportOpen(true)}
+                    className="flex items-center gap-1.5 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-sm border border-slate-200 text-xs font-semibold text-slate-500 active:text-rose-500 transition-colors"
+                >
+                    <Flag size={13} className="text-slate-400" />
+                    Report Listing
+                </button>
+            </div>
+
             {/* FAB (Hidden on mobile detail because of bottom bar) */}
-            <a
-                href="https://wa.me/26771234567"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hidden lg:flex fixed bottom-28 right-6 lg:bottom-12 lg:right-12 bg-emerald-500 hover:bg-emerald-600 text-white w-16 h-16 rounded-full shadow-2xl shadow-emerald-200 items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 group z-50"
-            >
-                <MessageCircle size={32} />
-                <span className="absolute right-full mr-4 bg-white text-slate-900 px-3 py-1 rounded-lg text-sm font-bold shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-slate-100">
-                    Chat on WhatsApp
-                </span>
-            </a>
+            {whatsappUrl ? (
+                <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hidden lg:flex fixed bottom-28 right-6 lg:bottom-12 lg:right-12 bg-emerald-500 hover:bg-emerald-600 text-white w-16 h-16 rounded-full shadow-2xl shadow-emerald-200 items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 group z-50"
+                >
+                    <MessageCircle size={32} />
+                    <span className="absolute right-full mr-4 bg-white text-slate-900 px-3 py-1 rounded-lg text-sm font-bold shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-slate-100">
+                        Chat on WhatsApp
+                    </span>
+                </a>
+            ) : (
+                <div
+                    title="This dealer hasn't added a WhatsApp number yet"
+                    className="hidden lg:flex fixed bottom-28 right-6 lg:bottom-12 lg:right-12 bg-slate-300 text-slate-500 w-16 h-16 rounded-full shadow-xl items-center justify-center group z-50 cursor-not-allowed"
+                >
+                    <MessageCircle size={32} />
+                    <span className="absolute right-full mr-4 bg-white text-slate-500 px-3 py-1 rounded-lg text-sm font-semibold shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-slate-100">
+                        No WhatsApp number set
+                    </span>
+                </div>
+            )}
+
+            {isReportOpen && (
+                <ReportModal
+                    vehicleId={vehicle._id}
+                    vehicleName={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                    dealerId={vehicle.dealerId}
+                    onClose={() => setIsReportOpen(false)}
+                />
+            )}
 
             <MobileNav />
         </main>
