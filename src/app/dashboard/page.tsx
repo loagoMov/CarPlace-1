@@ -266,7 +266,7 @@ export default function DealerDashboard() {
                             Manage {organization.name}
                         </p>
                     </div>
-                    <UserButton afterSignOutUrl="/" />
+                    <UserButton />
                 </div>
             </header>
 

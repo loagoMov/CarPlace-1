@@ -241,7 +241,7 @@ export default function GlobalAdminDashboard() {
                             </p>
                         </div>
                     </div>
-                    <UserButton afterSignOutUrl="/" />
+                    <UserButton />
                 </div>
             </header>
 
