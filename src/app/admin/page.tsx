@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useMutation } from "convex/react";
+import Image from "next/image";
 import { api } from "../../../convex/_generated/api";
 import { useUser, UserButton } from "@clerk/nextjs";
 import {
@@ -18,6 +19,16 @@ const REASON_LABELS: Record<string, string> = {
     already_sold:         "👤 Ghost Listing",
     suspicious_dealer:    "⚠️ Suspicious Dealer",
     other:                "🏳 Other",
+};
+
+const getTimeLeftStr = (until: number) => {
+    const diff = until - Date.now();
+    if (diff <= 0) return "Expired";
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+    if (days > 0) return `${days}d ${hours}h`;
+    const mins = Math.floor((diff / (1000 * 60)) % 60);
+    return `${hours}h ${mins}m`;
 };
 
 function DealershipDetailRow({ dealerId }: { dealerId: string }) {
@@ -46,7 +57,7 @@ function DealershipDetailRow({ dealerId }: { dealerId: string }) {
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 relative rounded-lg overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0">
                                         {car.imageUrls?.[0] && (
-                                            <img src={car.imageUrls[0]} alt={car.make} className="object-cover w-full h-full" />
+                                            <Image src={car.imageUrls[0]} alt={car.make} fill sizes="40px" className="object-cover" />
                                         )}
                                     </div>
                                     <div>
@@ -542,7 +553,7 @@ export default function GlobalAdminDashboard() {
                                                 <div className="flex gap-4">
                                                     <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
                                                         {app.vehicleImage ? (
-                                                            <img src={app.vehicleImage} alt={app.vehicleName} className="w-full h-full object-cover" />
+                                                            <Image src={app.vehicleImage} alt={app.vehicleName} fill sizes="80px" className="object-cover" />
                                                         ) : (
                                                             <div className="w-full h-full flex items-center justify-center text-slate-300">
                                                                 <Sparkles size={24} />
@@ -558,6 +569,11 @@ export default function GlobalAdminDashboard() {
                                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pt-1">
                                                             {app.durationDays} Days • P {app.price}
                                                         </p>
+                                                        {app.status === "approved" && app.featuredUntil && (
+                                                            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">
+                                                                Time Left: {getTimeLeftStr(app.featuredUntil)}
+                                                            </p>
+                                                        )}
                                                     </div>
                                                 </div>
 
@@ -666,11 +682,15 @@ export default function GlobalAdminDashboard() {
                                                 <div className="flex items-start gap-4 p-5">
                                                     {/* Vehicle thumbnail */}
                                                     {report.vehicle?.imageUrl ? (
-                                                        <img
-                                                            src={report.vehicle.imageUrl}
-                                                            alt={`${report.vehicle?.make} ${report.vehicle?.model}`}
-                                                            className="w-16 h-16 object-cover rounded-xl shrink-0"
-                                                        />
+                                                        <div className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0">
+                                                            <Image
+                                                                src={report.vehicle.imageUrl}
+                                                                alt={`${report.vehicle?.make} ${report.vehicle?.model}`}
+                                                                fill
+                                                                sizes="64px"
+                                                                className="object-cover"
+                                                            />
+                                                        </div>
                                                     ) : (
                                                         <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center text-slate-300 shrink-0">
                                                             <Flag size={24} />

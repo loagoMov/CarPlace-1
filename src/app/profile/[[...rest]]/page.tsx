@@ -2,7 +2,8 @@
 
 import { UserProfile } from "@clerk/nextjs";
 import MobileNav from "@/components/navigation/MobileNav";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Heart } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
@@ -26,7 +27,15 @@ export default function ProfilePage() {
                 </div>
             </header>
 
-            <div className="max-w-7xl mx-auto p-4 lg:p-8">
+            <div className="max-w-7xl mx-auto p-4 lg:p-8 space-y-6">
+                <div className="max-w-4xl mx-auto flex justify-end">
+                    <Link
+                        href="/favorites"
+                        className="flex items-center gap-2 bg-white border border-slate-100 hover:border-slate-200 shadow-sm px-6 py-3 rounded-2xl text-sm font-bold text-slate-700 transition-all hover:text-rose-500"
+                    >
+                        <Heart className="w-4 h-4 text-rose-500 fill-rose-500 animate-pulse" /> My Favorites
+                    </Link>
+                </div>
                 <div className="flex justify-center">
                     <UserProfile
                         path="/profile"

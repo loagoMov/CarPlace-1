@@ -5,6 +5,7 @@ import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { X, Upload, CheckCircle2, AlertCircle } from "lucide-react";
+import { compressImage } from "@/utils/imageCompressor";
 
 // ─── Security constants ───────────────────────────────────────────────────────
 const MAX_FILE_SIZE_MB = 5;
@@ -25,6 +26,23 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [fileError, setFileError] = useState<string | null>(null);
     const [submitError, setSubmitError] = useState<string | null>(null);
+
+    const [priceInput, setPriceInput] = useState("");
+    const [mileageInput, setMileageInput] = useState("");
+
+    const formatNumber = (val: string) => {
+        const num = val.replace(/\D/g, "");
+        if (!num) return "";
+        return parseInt(num, 10).toLocaleString();
+    };
+
+    const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setPriceInput(formatNumber(e.target.value));
+    };
+
+    const handleMileageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setMileageInput(formatNumber(e.target.value));
+    };
 
     // V-07 fix: validate file MIME type and size before accepting
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,11 +83,13 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
             // Upload files to Convex Storage first
             const storageIds: Id<"_storage">[] = [];
             for (const file of selectedFiles) {
+                // Compress the image before uploading
+                const compressedFile = await compressImage(file, 1200, 0.82);
                 const postUrl = await generateUploadUrl();
                 const result = await fetch(postUrl, {
                     method: "POST",
-                    headers: { "Content-Type": file.type },
-                    body: file,
+                    headers: { "Content-Type": compressedFile.type },
+                    body: compressedFile,
                 });
                 const { storageId } = await result.json();
                 storageIds.push(storageId as Id<"_storage">);
@@ -146,11 +166,13 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
                         </div>
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Mileage (km)</label>
-                            <input name="mileage" type="number" required min={0} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold" placeholder="45000" />
+                            <input type="text" value={mileageInput} onChange={handleMileageChange} required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold" placeholder="45,000" />
+                            <input type="hidden" name="mileage" value={mileageInput.replace(/\D/g, "")} />
                         </div>
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Price (BWP)</label>
-                            <input name="price" type="number" required min={1} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold" placeholder="450000" />
+                            <input type="text" value={priceInput} onChange={handlePriceChange} required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold" placeholder="450,000" />
+                            <input type="hidden" name="price" value={priceInput.replace(/\D/g, "")} />
                         </div>
                     </div>
 

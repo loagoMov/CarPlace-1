@@ -41,6 +41,7 @@ export default function CarCard({ car }: { car: Car }) {
                             src={car.imageUrls?.[0] || "/placeholder-car.jpg"}
                             alt={`${car.make} ${car.model}`}
                             fill
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                             className="object-cover transition-transform duration-500 group-hover:scale-110"
                         />
                         <div className="absolute top-3 left-3">

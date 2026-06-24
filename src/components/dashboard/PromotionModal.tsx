@@ -113,7 +113,7 @@ export default function PromotionModal({ vehicle, onClose }: PromotionModalProps
                     <div className="flex gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
                         <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0">
                             {vehicle.imageUrls?.[0] && (
-                                <Image src={vehicle.imageUrls[0]} alt={vehicle.make} fill className="object-cover" />
+                                <Image src={vehicle.imageUrls[0]} alt={vehicle.make} fill sizes="64px" className="object-cover" />
                             )}
                         </div>
                         <div>

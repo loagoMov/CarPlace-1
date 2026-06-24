@@ -34,7 +34,11 @@ const nextConfig = {
           // but frame-ancestors in CSP is the modern standard (see below).
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+          // Only send HSTS in production – sending it on localhost makes Safari
+          // permanently upgrade http:// → https://, breaking the dev server.
+          ...(process.env.NODE_ENV === "production"
+            ? [{ key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" }]
+            : []),
           // MED-03 fix: tightened from strict-origin-when-cross-origin so that
           // external links (e.g. WhatsApp deep-links) don't receive our origin.
           { key: "Referrer-Policy", value: "no-referrer" },
@@ -66,7 +70,7 @@ const nextConfig = {
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.convex.cloud https://img.clerk.com https://images.clerk.dev",
               // Connections: Convex realtime + Clerk APIs
-              "connect-src 'self' https://*.convex.cloud wss://*.convex.cloud https://*.clerk.com https://*.clerk.accounts.dev https://*.clerk.dev",
+              "connect-src 'self' https://*.convex.cloud wss://*.convex.cloud https://*.clerk.com https://*.clerk.accounts.dev https://*.clerk.dev https://clerk-telemetry.com",
               "worker-src 'self' blob:",
               // Frames: Clerk OAuth popups and Cloudflare Turnstile
               "frame-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://*.clerk.dev https://challenges.cloudflare.com",
@@ -77,7 +81,9 @@ const nextConfig = {
               // for modern browsers. Both are set for maximum compatibility.
               "frame-ancestors 'none'",
               // Security best-practice: block access to browser features via CSP
-              "upgrade-insecure-requests",
+              // Only upgrade insecure requests in production to avoid HTTPS
+              // enforcement on the local dev server (breaks Safari).
+              ...(process.env.NODE_ENV === "production" ? ["upgrade-insecure-requests"] : []),
             ].join("; "),
           },
           // Defense-in-depth: prevent browsers from caching sensitive admin/dashboard pages

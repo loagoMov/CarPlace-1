@@ -14,19 +14,19 @@ export interface RateLimitConfig {
 // All thresholds are intentionally conservative for the initial rollout.
 export const RATE_LIMITS = {
     // Unauthenticated report — highest abuse risk
-    REPORT_GUEST:        { maxRequests: 2,  windowMs: 5 * 60_000  } satisfies RateLimitConfig,
+    REPORT_GUEST:        { maxRequests: 2,  windowMs: 60 * 60_000 } satisfies RateLimitConfig,
     // Authenticated report
-    REPORT_USER:         { maxRequests: 5,  windowMs: 60_000      } satisfies RateLimitConfig,
+    REPORT_USER:         { maxRequests: 5,  windowMs: 60 * 60_000 } satisfies RateLimitConfig,
     // Storage upload URL generation — billing attack vector
-    UPLOAD_URL:          { maxRequests: 20, windowMs: 60_000      } satisfies RateLimitConfig,
+    UPLOAD_URL:          { maxRequests: 20, windowMs: 60 * 60_000 } satisfies RateLimitConfig,
     // New vehicle listing creation
     CREATE_VEHICLE:      { maxRequests: 10, windowMs: 60 * 60_000 } satisfies RateLimitConfig,
     // Vehicle edits — more generous
-    UPDATE_VEHICLE:      { maxRequests: 30, windowMs: 60_000      } satisfies RateLimitConfig,
+    UPDATE_VEHICLE:      { maxRequests: 30, windowMs: 60 * 60_000 } satisfies RateLimitConfig,
     // Featured listing application — payment intent, so very low limit
-    FEATURED_APPLY:      { maxRequests: 3,  windowMs: 24 * 60 * 60_000 } satisfies RateLimitConfig,
+    FEATURED_APPLY:      { maxRequests: 3,  windowMs: 60 * 60_000 } satisfies RateLimitConfig,
     // Search history saves
-    SEARCH_SAVE:         { maxRequests: 30, windowMs: 60_000      } satisfies RateLimitConfig,
+    SEARCH_SAVE:         { maxRequests: 30, windowMs: 60 * 60_000 } satisfies RateLimitConfig,
     // Dealership creation — very low; one org should only create once
     CREATE_DEALERSHIP:   { maxRequests: 3,  windowMs: 60 * 60_000 } satisfies RateLimitConfig,
     // Email/phone updates

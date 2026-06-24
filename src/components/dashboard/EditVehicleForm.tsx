@@ -6,6 +6,7 @@ import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { X, Upload, CheckCircle2, Loader2, Trash2, AlertTriangle, AlertCircle } from "lucide-react";
 import Image from "next/image";
+import { compressImage } from "@/utils/imageCompressor";
 
 // ─── Security constants ───────────────────────────────────────────────────────
 const MAX_FILE_SIZE_MB = 5;
@@ -30,6 +31,24 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [fileError, setFileError] = useState<string | null>(null);
     const [submitError, setSubmitError] = useState<string | null>(null);
+
+    const formatNumber = (val: string | number | undefined) => {
+        if (val === undefined || val === null) return "";
+        const num = String(val).replace(/\D/g, "");
+        if (!num) return "";
+        return parseInt(num, 10).toLocaleString();
+    };
+
+    const [priceInput, setPriceInput] = useState(formatNumber(vehicle.price));
+    const [mileageInput, setMileageInput] = useState(formatNumber(vehicle.mileage));
+
+    const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setPriceInput(formatNumber(e.target.value));
+    };
+
+    const handleMileageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setMileageInput(formatNumber(e.target.value));
+    };
 
     // V-07 fix: validate file MIME type and size before accepting
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,11 +109,12 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
             if (selectedFiles.length > 0) {
                 const newStorageIds: Id<"_storage">[] = [];
                 for (const file of selectedFiles) {
+                    const compressedFile = await compressImage(file, 1200, 0.82);
                     const postUrl = await generateUploadUrl();
                     const result = await fetch(postUrl, {
                         method: "POST",
-                        headers: { "Content-Type": file.type },
-                        body: file,
+                        headers: { "Content-Type": compressedFile.type },
+                        body: compressedFile,
                     });
                     const { storageId } = await result.json();
                     newStorageIds.push(storageId as Id<"_storage">);
@@ -220,11 +240,13 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1 whitespace-nowrap">Mileage (km)</label>
-                                <input name="mileage" type="number" defaultValue={vehicle.mileage} required min={0} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold px-3" />
+                                <input type="text" value={mileageInput} onChange={handleMileageChange} required className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold px-3" />
+                                <input type="hidden" name="mileage" value={mileageInput.replace(/\D/g, "")} />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Price (P)</label>
-                                <input name="price" type="number" defaultValue={vehicle.price} required min={1} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold px-3" />
+                                <input type="text" value={priceInput} onChange={handlePriceChange} required className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold px-3" />
+                                <input type="hidden" name="price" value={priceInput.replace(/\D/g, "")} />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Status</label>
@@ -291,7 +313,7 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
                             <div className="flex flex-wrap gap-4">
                                 {vehicle.imageUrls?.map((url: string, idx: number) => (
                                     <div key={idx} className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-slate-100 group">
-                                        <Image src={url} alt="Car" fill className="object-cover" />
+                                        <Image src={url} alt="Car" fill sizes="96px" className="object-cover" />
                                     </div>
                                 ))}
                             </div>

@@ -1,4 +1,5 @@
 import { query, mutation } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { v, ConvexError } from "convex/values";
 import { requireGlobalAdmin, isGlobalAdmin } from "./utils";
 import { checkRateLimit, rateLimitKey, RATE_LIMITS } from "./rateLimit";
@@ -46,7 +47,7 @@ export const submit = mutation({
         const dealer = await ctx.db.get(args.dealerId);
         if (!dealer) throw new ConvexError("Dealership not found.");
 
-        return await ctx.db.insert("reports", {
+        const reportId = await ctx.db.insert("reports", {
             vehicleId:      args.vehicleId,
             dealerId:       args.dealerId,
             reason:         args.reason,
@@ -55,6 +56,23 @@ export const submit = mutation({
             reporterEmail:  identity?.email,
             status:         "open",
         });
+
+        // Fire-and-forget: notify admins via email without blocking the response
+        await ctx.scheduler.runAfter(0, internal.email.sendAdminNotification, {
+            type: "report",
+            details: {
+                reportId,
+                vehicleId:     args.vehicleId,
+                dealerId:      args.dealerId,
+                vehicleName:   `${vehicle.year} ${vehicle.make} ${vehicle.model}`,
+                dealerName:    dealer.name,
+                reason:        args.reason,
+                customMessage: args.customMessage,
+                reporterEmail: identity?.email,
+            },
+        });
+
+        return reportId;
     },
 });
 

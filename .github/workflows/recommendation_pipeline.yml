@@ -1,0 +1,32 @@
+name: Recommendation Pipeline
+
+on:
+  schedule:
+    - cron: '16 0 * * *' # Runs daily at 00:16 UTC
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests duckdb==1.5.3
+
+      - name: Run pipeline script
+        env:
+          CONVEX_HTTP_URL: ${{ secrets.CONVEX_HTTP_URL }}
+          MOTHERDUCK_SYNC_SECRET: ${{ secrets.MOTHERDUCK_SYNC_SECRET }}
+          MOTHERDUCK_TOKEN: ${{ secrets.MOTHERDUCK_TOKEN }}
+          MOTHERDUCK_DB_NAME: carplace_analytics
+        run: python scripts/recommendation_pipeline.py

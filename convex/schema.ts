@@ -49,6 +49,7 @@ export default defineSchema({
     })
         .index("by_dealer", ["dealerId"])
         .index("by_status", ["status"])
+        .index("by_status_and_category", ["status", "category"])
         .searchIndex("search_vehicles", {
             searchField: "searchText",
             filterFields: ["status"],
@@ -118,4 +119,37 @@ export default defineSchema({
         windowStart: v.number(),  // epoch ms when the current window opened
     })
         .index("by_key", ["key"]),
+
+    // ── Telemetry & Recommendation Pipeline ──────────────────────────────────
+    telemetryLogs: defineTable({
+        userId: v.optional(v.string()),
+        anonymousSessionId: v.optional(v.string()),
+        vehicleId: v.optional(v.id("vehicles")),
+        eventType: v.string(),
+        pageRoute: v.string(),
+        metadata: v.optional(v.any()),
+        timestamp: v.number(),
+    })
+        .index("by_timestamp", ["timestamp"])
+        .index("by_user", ["userId"])
+        .index("by_vehicle", ["vehicleId"]),
+
+    homepageRecommendations: defineTable({
+        targetId: v.string(), // userId or anonymousSessionId
+        recommendedVehicleIds: v.array(v.id("vehicles")),
+        calculatedAt: v.number(),
+    })
+        .index("by_targetId", ["targetId"]),
+
+    listingAnalytics: defineTable({
+        vehicleId: v.id("vehicles"),
+        dealerId: v.id("dealerships"),
+        views: v.number(),
+        favorites: v.number(),
+        shares: v.number(),
+        clicks: v.number(),
+        updatedAt: v.number(),
+    })
+        .index("by_vehicle", ["vehicleId"])
+        .index("by_dealer", ["dealerId"]),
 });

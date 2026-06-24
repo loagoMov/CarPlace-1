@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useQuery } from "convex/react";
+import { useRouter } from "next/navigation";
 import { api } from "../../../../convex/_generated/api";
 import MobileNav from "@/components/navigation/MobileNav";
 import CarCard from "@/components/ui/CarCard";
-import { SkeletonGrid } from "@/components/ui/SkeletonLoader";
 import { useSearchHistory, SearchEntry } from "@/hooks/useSearchHistory";
+import { motion } from "framer-motion";
 import {
     ChevronRight, ChevronLeft, Search, Sparkles, Car,
     Gauge, Fuel, Settings2, Palette, BadgeDollarSign, CalendarRange,
@@ -136,12 +137,51 @@ function Results({ filters, onReset }: { filters: Filters; onReset: () => void }
 
     const vehicles = useQuery(api.vehicles.advancedSearch, args);
 
+    if (vehicles === undefined) {
+        return (
+            <div className="w-full max-w-2xl mx-auto bg-slate-950 text-white rounded-3xl overflow-hidden border border-slate-800 shadow-2xl min-h-[350px] p-10 flex flex-col items-center justify-center text-center space-y-6">
+                {/* Glowing animated icon */}
+                <div className="relative w-20 h-20 flex items-center justify-center">
+                    <motion.div 
+                        className="absolute inset-0 bg-primary-500/20 rounded-full blur-xl"
+                        animate={{ scale: [1, 1.3, 1] }}
+                        transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                    />
+                    <div className="relative w-16 h-16 bg-gradient-to-tr from-primary-600 to-violet-600 rounded-2xl flex items-center justify-center shadow-lg border border-white/10 text-white">
+                        <Sparkles className="animate-pulse" size={32} />
+                    </div>
+                </div>
+                
+                {/* Pulsing Status Text */}
+                <div className="space-y-2 max-w-sm">
+                    <h3 className="text-xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-white/70">
+                        Analyzing Match Criteria...
+                    </h3>
+                    <p className="text-sm font-medium text-slate-400">
+                        Searching dealerships for matching cars and optimizing your personalized deal ranks.
+                    </p>
+                </div>
+
+                {/* Animated scanning status indicator */}
+                <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-full px-4 py-1.5">
+                    <span className="flex h-2 w-2 relative">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400">
+                        Scanning database live
+                    </span>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div>
+        <div className="bg-white rounded-3xl shadow-2xl p-8">
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h2 className="text-xl font-black text-slate-900">
-                        {vehicles === undefined ? "Searching…" : `${vehicles.length} Deals Found`}
+                        {vehicles.length} Deals Found
                     </h2>
                     <p className="text-sm text-slate-500 font-medium">Ranked by best match to your preferences</p>
                 </div>
@@ -153,9 +193,7 @@ function Results({ filters, onReset }: { filters: Filters; onReset: () => void }
                 </button>
             </div>
 
-            {vehicles === undefined ? (
-                <SkeletonGrid />
-            ) : vehicles.length === 0 ? (
+            {vehicles.length === 0 ? (
                 <div className="py-20 text-center space-y-4">
                     <div className="w-20 h-20 bg-slate-100 rounded-3xl flex items-center justify-center mx-auto text-slate-300">
                         <Car size={40} />
@@ -180,6 +218,7 @@ function Results({ filters, onReset }: { filters: Filters; onReset: () => void }
                             </div>
                         ))}
                     </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {vehicles.map((car: any) => (
                             <div key={car._id} className="relative">
@@ -257,6 +296,7 @@ function RecentSearches({ onRerun }: { onRerun: (e: SearchEntry) => void }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function AdvancedSearchPage() {
+    const router = useRouter();
     const [step, setStep] = useState(0);
     const [filters, setFilters] = useState<Filters>(EMPTY);
     const [submitted, setSubmitted] = useState(false);
@@ -311,6 +351,16 @@ export default function AdvancedSearchPage() {
 
     return (
         <main className="min-h-screen pb-32" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)" }}>
+
+            {/* Back Button */}
+            <div className="max-w-2xl mx-auto px-4 pt-6">
+                <button
+                    onClick={() => router.back()}
+                    className="inline-flex items-center gap-2 text-sm font-bold text-white/80 hover:text-white bg-white/5 hover:bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-2 transition-all cursor-pointer shadow-sm"
+                >
+                    <ChevronLeft size={16} /> Back to Search
+                </button>
+            </div>
 
             {/* ── Hero ─────────────────────────────────────────────── */}
             <div className="relative overflow-hidden px-4 pt-12 pb-8 text-white">
@@ -523,19 +573,19 @@ export default function AdvancedSearchPage() {
                         <div className="px-8 pb-8 flex justify-between gap-4">
                             {step > 0 ? (
                                 <button onClick={() => setStep(step - 1)}
-                                    className="flex items-center gap-2 px-6 py-3 rounded-2xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-all">
+                                    className="flex items-center gap-2 px-6 py-3 rounded-2xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-all cursor-pointer">
                                     <ChevronLeft size={18} /> Back
                                 </button>
                             ) : <div />}
 
                             {step < 2 ? (
                                 <button onClick={() => setStep(step + 1)}
-                                    className="flex items-center gap-2 px-8 py-3 rounded-2xl bg-primary-600 text-white font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-200 ml-auto">
+                                    className="flex items-center gap-2 px-8 py-3 rounded-2xl bg-primary-600 text-white font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-200 ml-auto cursor-pointer">
                                     Next <ChevronRight size={18} />
                                 </button>
                             ) : (
                                 <button onClick={handleSubmit}
-                                    className="flex items-center gap-2 px-8 py-3 rounded-2xl font-bold text-white transition-all shadow-lg ml-auto"
+                                    className="flex items-center gap-2 px-8 py-3 rounded-2xl font-bold text-white transition-all shadow-lg ml-auto cursor-pointer"
                                     style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}>
                                     <Sparkles size={18} /> Find My Deal
                                 </button>
@@ -543,9 +593,7 @@ export default function AdvancedSearchPage() {
                         </div>
                     </div>
                 ) : (
-                    <div className="bg-white rounded-3xl shadow-2xl p-8">
-                        <Results filters={filters} onReset={handleReset} />
-                    </div>
+                    <Results filters={filters} onReset={handleReset} />
                 )}
 
                 {/* Applied filter chips */}

@@ -10,10 +10,13 @@
 
 import type * as crons from "../crons.js";
 import type * as dealerships from "../dealerships.js";
+import type * as email from "../email.js";
 import type * as featured from "../featured.js";
+import type * as http from "../http.js";
 import type * as rateLimit from "../rateLimit.js";
 import type * as reports from "../reports.js";
 import type * as searchHistory from "../searchHistory.js";
+import type * as telemetry from "../telemetry.js";
 import type * as utils from "../utils.js";
 import type * as vehicles from "../vehicles.js";
 
@@ -26,10 +29,13 @@ import type {
 declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   dealerships: typeof dealerships;
+  email: typeof email;
   featured: typeof featured;
+  http: typeof http;
   rateLimit: typeof rateLimit;
   reports: typeof reports;
   searchHistory: typeof searchHistory;
+  telemetry: typeof telemetry;
   utils: typeof utils;
   vehicles: typeof vehicles;
 }>;

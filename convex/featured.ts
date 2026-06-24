@@ -1,4 +1,5 @@
 import { query, mutation } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { v, ConvexError } from "convex/values";
 import { isGlobalAdmin, requireGlobalAdmin } from "./utils";
 import { checkRateLimit, rateLimitKey, RATE_LIMITS } from "./rateLimit";
@@ -63,6 +64,21 @@ export const apply = mutation({
             appliedAt: Date.now(),
         });
 
+        // Fire-and-forget: notify admins of the new promotion request
+        await ctx.scheduler.runAfter(0, internal.email.sendAdminNotification, {
+            type: "promotion",
+            details: {
+                applicationId,
+                vehicleId:   args.vehicleId,
+                dealerId:    vehicle.dealerId,
+                vehicleName: `${vehicle.year} ${vehicle.make} ${vehicle.model}`,
+                dealerName:  dealership.name,
+                durationDays: args.durationDays,
+                price,
+                status,
+            },
+        });
+
         return { applicationId, status };
     },
 });
@@ -97,6 +113,7 @@ export const list = query({
                         vehicleName: vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : "Unknown Vehicle",
                         vehicleImage: vehicle?.images?.[0] ? await ctx.storage.getUrl(vehicle.images[0]) : null,
                         dealerName: dealer?.name || "Unknown Dealer",
+                        featuredUntil: vehicle?.featuredUntil,
                     };
                 })
             );
@@ -128,6 +145,7 @@ export const list = query({
                     ...app,
                     vehicleName: vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : "Unknown Vehicle",
                     vehicleImage: vehicle?.images?.[0] ? await ctx.storage.getUrl(vehicle.images[0]) : null,
+                    featuredUntil: vehicle?.featuredUntil,
                 };
             })
         );

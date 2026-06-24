@@ -4,19 +4,32 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import MobileNav from "@/components/navigation/MobileNav";
 import CarCard from "@/components/ui/CarCard";
+import FeaturedCarousel from "@/components/ui/FeaturedCarousel";
 import { SkeletonGrid } from "@/components/ui/SkeletonLoader";
-import { Search, MapPin, SlidersHorizontal, Sparkles, Clock, ArrowRight } from "lucide-react";
-import { useState } from "react";
+import { Search, MapPin, SlidersHorizontal, Sparkles, Clock, ArrowRight, Heart } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSearchHistory } from "@/hooks/useSearchHistory";
+import { useTelemetry } from "@/hooks/useTelemetry";
+import { useAuth } from "@clerk/nextjs";
 
 export default function Home() {
     const router = useRouter();
     const [queryText, setQueryText] = useState("");
+    const [activeTab, setActiveTab] = useState<"explore" | "foryou">("explore");
+    const { userId, isSignedIn } = useAuth();
+    const targetId = isSignedIn ? (userId || "") : (typeof window !== "undefined" ? localStorage.getItem("carplace_anon_id") || "" : "");
+
     const vehicles = useQuery(api.vehicles.list, {});
+    const forYouVehicles = useQuery(api.vehicles.getForYouFeed, { targetId: targetId || undefined });
     const featuredVehicles = useQuery(api.vehicles.getFeatured);
     const { history } = useSearchHistory();
+    const { trackEvent } = useTelemetry();
+
+    useEffect(() => {
+        trackEvent("page_view");
+    }, [trackEvent]);
 
     return (
         <main className="min-h-screen pb-28 pt-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
@@ -31,12 +44,21 @@ export default function Home() {
                             <MapPin size={14} className="text-primary-500" /> Gaborone, Botswana
                         </p>
                     </div>
-                    <button 
-                        onClick={() => router.push("/search?filters=true")}
-                        className="p-3 bg-white border border-slate-200 rounded-xl shadow-sm text-slate-600 hover:text-primary-600 transition-colors"
-                    >
-                        <SlidersHorizontal size={20} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={() => router.push("/favorites")}
+                            className="p-3 bg-white border border-slate-200 rounded-xl shadow-sm text-slate-600 hover:text-rose-500 transition-colors"
+                            title="My Favorites"
+                        >
+                            <Heart size={20} className="text-slate-600 hover:text-rose-500 fill-transparent hover:fill-rose-500 transition-colors" />
+                        </button>
+                        <button 
+                            onClick={() => router.push("/search?filters=true")}
+                            className="p-3 bg-white border border-slate-200 rounded-xl shadow-sm text-slate-600 hover:text-primary-600 transition-colors"
+                        >
+                            <SlidersHorizontal size={20} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Search bar */}
@@ -131,7 +153,7 @@ export default function Home() {
             </header>
 
             {/* Featured Listings Horizontal Carousel */}
-            {featuredVehicles && featuredVehicles.length > 0 && (
+            {vehicles && vehicles.length > 0 && (
                 <section className="mb-10">
                     <div className="flex justify-between items-end mb-6">
                         <div className="flex items-center gap-2">
@@ -142,31 +164,85 @@ export default function Home() {
                             <h2 className="text-xl font-black text-slate-900 tracking-tight">Featured Listings</h2>
                         </div>
                     </div>
-                    <div className="flex gap-6 overflow-x-auto pb-4 pt-1 px-1 -mx-4 sm:mx-0 snap-x snap-mandatory scrollbar-thin">
-                        {featuredVehicles.map((car: any) => (
-                            <div key={car._id} className="flex-none w-[280px] sm:w-[320px] snap-start">
-                                <CarCard car={car} />
-                            </div>
-                        ))}
+                    <div className="-mx-4 sm:mx-0">
+                        <FeaturedCarousel cars={vehicles} />
                     </div>
                 </section>
             )}
 
-            {/* Car Grid (Organic Explore) */}
+            {/* Feed Selector (Explore vs For You) */}
             <section>
-                <div className="flex justify-between items-end mb-6">
-                    <h2 className="text-xl font-black text-slate-900 tracking-tight">Explore Inventory</h2>
-                    <button className="text-primary-600 text-sm font-bold hover:underline underline-offset-4" onClick={() => router.push("/search")}>See All</button>
+                <div className="flex justify-between items-center mb-6">
+                    <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
+                        <button
+                            onClick={() => setActiveTab("explore")}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                                activeTab === "explore"
+                                    ? "bg-white text-slate-900 shadow-sm"
+                                    : "text-slate-500 hover:text-slate-800"
+                            }`}
+                        >
+                            Explore
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("foryou")}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                                activeTab === "foryou"
+                                    ? "bg-white text-slate-900 shadow-sm"
+                                    : "text-slate-500 hover:text-slate-800"
+                            }`}
+                        >
+                            <Sparkles size={13} className="text-indigo-500 animate-pulse" />
+                            For You
+                        </button>
+                    </div>
+                    <button 
+                        className="text-primary-600 text-sm font-bold hover:underline underline-offset-4" 
+                        onClick={() => router.push("/search")}
+                    >
+                        See All
+                    </button>
                 </div>
 
-                {!vehicles ? (
-                    <SkeletonGrid />
+                {activeTab === "explore" ? (
+                    !vehicles ? (
+                        <SkeletonGrid />
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {vehicles.map((car: any) => (
+                                <CarCard key={car._id} car={car} />
+                            ))}
+                        </div>
+                    )
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {vehicles.map((car: any) => (
-                            <CarCard key={car._id} car={car} />
-                        ))}
-                    </div>
+                    !forYouVehicles ? (
+                        <SkeletonGrid />
+                    ) : forYouVehicles.length === 0 ? (
+                        <div className="text-center py-12 px-4 bg-slate-50 rounded-3xl border border-slate-100">
+                            <Sparkles size={40} className="mx-auto text-indigo-400 mb-3 animate-pulse" />
+                            <p className="text-slate-700 font-bold mb-1">No personalized recommendations yet</p>
+                            <p className="text-slate-500 text-sm max-w-sm mx-auto">
+                                Keep browsing cars, adding them to your wishlist, or searching specs to train your personal model!
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="space-y-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {forYouVehicles.map((car: any) => (
+                                    <CarCard key={car._id} car={car} />
+                                ))}
+                            </div>
+                            <div className="flex justify-center pt-4">
+                                <button
+                                    onClick={() => setActiveTab("explore")}
+                                    className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 hover:border-primary-500 hover:text-primary-600 rounded-full font-bold text-sm text-slate-700 shadow-sm transition-all hover:shadow-md"
+                                >
+                                    Explore More
+                                    <ArrowRight size={16} />
+                                </button>
+                            </div>
+                        </div>
+                    )
                 )}
             </section>
 

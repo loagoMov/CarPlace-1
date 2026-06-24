@@ -4,6 +4,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import MobileNav from "@/components/navigation/MobileNav";
 import CarCard from "@/components/ui/CarCard";
 import { SkeletonGrid } from "@/components/ui/SkeletonLoader";
@@ -59,9 +60,9 @@ export default function DealerDetailsPage() {
             </Link>
 
             <div className="flex flex-col sm:flex-row sm:items-end gap-6 mb-12">
-                <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-primary-50 to-primary-100 rounded-3xl flex items-center justify-center shrink-0 border-2 border-primary-200 shadow-xl shadow-primary-900/5">
+                <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-3xl flex items-center justify-center shrink-0 border-2 border-primary-200 shadow-xl shadow-primary-900/5 overflow-hidden">
                     {dealer.logoUrl ? (
-                        <img src={dealer.logoUrl} alt={dealer.name} className="w-full h-full object-cover rounded-3xl" />
+                        <Image src={dealer.logoUrl} alt={dealer.name} fill sizes="(max-width: 640px) 96px, 128px" className="object-cover" />
                     ) : (
                         <Store className="w-12 h-12 sm:w-16 sm:h-16 text-primary-500" />
                     )}

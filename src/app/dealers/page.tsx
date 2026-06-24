@@ -3,6 +3,7 @@
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import Link from "next/link";
+import Image from "next/image";
 import MobileNav from "@/components/navigation/MobileNav";
 import { Store, MapPin, ChevronRight } from "lucide-react";
 
@@ -49,9 +50,9 @@ export default function DealersPage() {
                             className="card-premium p-6 group hover:border-primary-300 transition-all flex flex-col justify-between"
                         >
                             <div className="flex items-start gap-4 mb-4">
-                                <div className="w-16 h-16 bg-gradient-to-br from-primary-50 to-primary-100 rounded-2xl flex items-center justify-center shrink-0 border border-primary-200">
+                                <div className="relative w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 border border-primary-200 overflow-hidden">
                                     {dealer.logoUrl ? (
-                                        <img src={dealer.logoUrl} alt={dealer.name} className="w-full h-full object-cover rounded-2xl" />
+                                        <Image src={dealer.logoUrl} alt={dealer.name} fill sizes="64px" className="object-cover" />
                                     ) : (
                                         <Store className="w-8 h-8 text-primary-500" />
                                     )}

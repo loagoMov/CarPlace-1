@@ -564,3 +564,71 @@ export const advancedSearch = query({
         return filtered.slice(0, 60);
     },
 });
+
+export const getForYouFeed = query({
+    args: {
+        targetId: v.optional(v.string()),
+    },
+    handler: async (ctx, args) => {
+        let vehicles: any[] = [];
+        if (args.targetId) {
+            const rec = await ctx.db
+                .query("homepageRecommendations")
+                .withIndex("by_targetId", (q) => q.eq("targetId", args.targetId!))
+                .unique();
+
+            if (rec && rec.recommendedVehicleIds.length > 0) {
+                const docs = await Promise.all(rec.recommendedVehicleIds.map((id) => ctx.db.get(id)));
+                vehicles = docs.filter((d): d is NonNullable<typeof d> => d !== null && d.status === "available");
+            }
+        }
+
+        // Fallback if no targetId, or recommendation not found, or recommended list is empty
+        if (vehicles.length === 0) {
+            const defaultList = await ctx.db
+                .query("vehicles")
+                .withIndex("by_status", (q) => q.eq("status", "available"))
+                .order("desc")
+                .take(10);
+            vehicles = defaultList;
+        }
+
+        return Promise.all(
+            vehicles.map(async (car) => ({
+                ...car,
+                imageUrls: (await Promise.all(
+                    car.images.map(async (id: any) => await ctx.storage.getUrl(id))
+                )).filter((url) => url !== null) as string[],
+            }))
+        );
+    },
+});
+
+export const getByIds = query({
+    args: { ids: v.array(v.string()) },
+    handler: async (ctx, args) => {
+        const vehicles = [];
+        for (const id of args.ids) {
+            try {
+                const vehicleId = ctx.db.normalizeId("vehicles", id);
+                if (!vehicleId) continue;
+                const car = await ctx.db.get(vehicleId);
+                if (car) {
+                    vehicles.push(car);
+                }
+            } catch {
+                // ignore invalid IDs
+            }
+        }
+        return Promise.all(
+            vehicles.map(async (car) => ({
+                ...car,
+                imageUrls: (await Promise.all(
+                    car.images.map(async (id) => await ctx.storage.getUrl(id))
+                )).filter((url) => url !== null) as string[],
+            }))
+        );
+    },
+});
+
+
