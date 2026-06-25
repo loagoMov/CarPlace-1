@@ -6,7 +6,7 @@ import { api } from "../../../convex/_generated/api";
 import { useUser, UserButton } from "@clerk/nextjs";
 import {
     Shield, Users, Building2, Star, Plus, Trash2, Check, Loader2,
-    AlertTriangle, Flag, Eye, XCircle, ChevronDown, ChevronUp, MessageSquare, Sparkles
+    AlertTriangle, Flag, Eye, XCircle, ChevronDown, ChevronUp, MessageSquare, Sparkles, Car
 } from "lucide-react";
 import { useState, Fragment } from "react";
 import MobileNav from "@/components/navigation/MobileNav";
@@ -47,8 +47,12 @@ function DealershipDetailRow({ dealerId }: { dealerId: string }) {
                         <Loader2 className="w-6 h-6 text-primary-500 animate-spin" />
                     </div>
                 ) : vehicles.length === 0 ? (
-                    <div className="p-8 text-center bg-white rounded-2xl border border-slate-100 text-xs font-medium text-slate-400">
-                        No active vehicle listings for this dealership.
+                    <div className="p-8 text-center bg-white rounded-2xl border border-slate-100 flex flex-col items-center justify-center space-y-2">
+                        <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400">
+                            <Car size={18} />
+                        </div>
+                        <p className="text-slate-800 font-bold text-xs">No active stock</p>
+                        <p className="text-slate-400 text-[10px] max-w-[200px]">This dealership has not added any vehicles to their list yet.</p>
                     </div>
                 ) : (
                     <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1">
@@ -89,8 +93,12 @@ function DealershipDetailRow({ dealerId }: { dealerId: string }) {
                         <Loader2 className="w-6 h-6 text-primary-500 animate-spin" />
                     </div>
                 ) : reports.length === 0 ? (
-                    <div className="p-8 text-center bg-white rounded-2xl border border-slate-100 text-xs font-medium text-slate-400">
-                        No reports associated with this dealership.
+                    <div className="p-8 text-center bg-white rounded-2xl border border-slate-100 flex flex-col items-center justify-center space-y-2">
+                        <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400">
+                            <Flag size={18} />
+                        </div>
+                        <p className="text-slate-800 font-bold text-xs">No reports associated</p>
+                        <p className="text-slate-400 text-[10px] max-w-[200px]">No issues or reports have been submitted against this dealership.</p>
                     </div>
                 ) : (
                     <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1">
@@ -530,11 +538,22 @@ export default function GlobalAdminDashboard() {
                             const source = featuredFilter === "all" ? featuredApps : featuredApps?.filter((a: any) => a.status === featuredFilter);
                             if (!source) return <div className="text-slate-400 font-bold text-sm">Loading…</div>;
                             if (source.length === 0) return (
-                                <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-3">
-                                    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto text-slate-300">
-                                        <Sparkles size={32} />
+                                <div className="bg-white rounded-[2rem] border border-slate-200 p-12 text-center flex flex-col items-center justify-center space-y-4">
+                                    <div className="w-14 h-14 bg-slate-50 border border-slate-100 rounded-full flex items-center justify-center text-slate-400">
+                                        <Sparkles size={24} />
                                     </div>
-                                    <p className="text-slate-500 font-bold text-sm">No {featuredFilter !== "all" ? featuredFilter : ""} featured listing applications</p>
+                                    <div className="space-y-1">
+                                        <p className="text-slate-900 font-black text-sm">No featured applications found</p>
+                                        <p className="text-slate-400 text-xs font-bold">There are no listing applications currently under "{featuredFilter}" filter.</p>
+                                    </div>
+                                    {featuredFilter !== "all" && (
+                                        <button
+                                            onClick={() => setFeaturedFilter("all")}
+                                            className="bg-primary-600 hover:bg-primary-700 text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-md shadow-primary-100 transition-all cursor-pointer"
+                                        >
+                                            Reset Filter
+                                        </button>
+                                    )}
                                 </div>
                             );
 
@@ -658,11 +677,22 @@ export default function GlobalAdminDashboard() {
                             const source = reportFilter === "all" ? allReports : allReports?.filter((r: any) => r.status === reportFilter);
                             if (!source) return <div className="text-slate-400 font-bold text-sm">Loading…</div>;
                             if (source.length === 0) return (
-                                <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-3">
-                                    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto text-slate-300">
-                                        <Flag size={32} />
+                                <div className="bg-white rounded-[2rem] border border-slate-200 p-12 text-center flex flex-col items-center justify-center space-y-4">
+                                    <div className="w-14 h-14 bg-slate-50 border border-slate-100 rounded-full flex items-center justify-center text-slate-400">
+                                        <Flag size={24} />
                                     </div>
-                                    <p className="text-slate-500 font-bold text-sm">No {reportFilter !== "all" ? reportFilter : ""} reports</p>
+                                    <div className="space-y-1">
+                                        <p className="text-slate-900 font-black text-sm">No reports found</p>
+                                        <p className="text-slate-400 text-xs font-bold">There are no reports currently under "{reportFilter}" filter.</p>
+                                    </div>
+                                    {reportFilter !== "all" && (
+                                        <button
+                                            onClick={() => setReportFilter("all")}
+                                            className="bg-primary-600 hover:bg-primary-700 text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-md shadow-primary-100 transition-all cursor-pointer"
+                                        >
+                                            Reset Filter
+                                        </button>
+                                    )}
                                 </div>
                             );
 

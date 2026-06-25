@@ -194,15 +194,53 @@ function Results({ filters, onReset }: { filters: Filters; onReset: () => void }
             </div>
 
             {vehicles.length === 0 ? (
-                <div className="py-20 text-center space-y-4">
-                    <div className="w-20 h-20 bg-slate-100 rounded-3xl flex items-center justify-center mx-auto text-slate-300">
-                        <Car size={40} />
+                <div className="flex flex-col items-center py-12 px-6 text-center space-y-6">
+                    {/* Animated icon */}
+                    <div className="relative w-24 h-24 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-rose-500/10 rounded-full blur-xl animate-pulse" />
+                        <div className="relative w-20 h-20 bg-gradient-to-br from-rose-500 to-pink-600 rounded-3xl flex items-center justify-center shadow-xl border border-rose-400/20">
+                            <Car size={36} className="text-white" />
+                        </div>
                     </div>
-                    <h3 className="text-xl font-black text-slate-900">No exact matches</h3>
-                    <p className="text-slate-500 font-medium max-w-xs mx-auto">
-                        Try raising your budget or removing a filter.
-                    </p>
-                    <button onClick={onReset} className="text-primary-600 font-bold hover:underline">Start over</button>
+
+                    {/* Title & message */}
+                    <div className="space-y-2 max-w-sm">
+                        <h3 className="text-2xl font-black text-slate-900">No exact matches found</h3>
+                        <p className="text-slate-500 text-sm font-medium leading-relaxed">
+                            Your criteria are very specific — try widening your budget or relaxing one or two filters to unlock more results.
+                        </p>
+                    </div>
+
+                    {/* Dynamic tip cards */}
+                    <div className="w-full max-w-sm grid grid-cols-1 gap-2 text-left">
+                        {[
+                            { icon: "💰", tip: "Increase your max budget by 10–20%." },
+                            { icon: "📅", tip: "Expand your model year range." },
+                            { icon: "🔄", tip: "Remove the transmission or colour preference." },
+                        ].map((t) => (
+                            <div key={t.tip} className="flex items-start gap-3 px-4 py-3 bg-slate-50 rounded-2xl border border-slate-100">
+                                <span className="text-lg shrink-0">{t.icon}</span>
+                                <p className="text-xs font-bold text-slate-600">{t.tip}</p>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* CTAs */}
+                    <div className="flex gap-3 flex-wrap justify-center">
+                        <button
+                            onClick={onReset}
+                            className="flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-sm text-white shadow-lg transition-all cursor-pointer"
+                            style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
+                        >
+                            <X size={16} /> Adjust & Retry
+                        </button>
+                        <button
+                            onClick={onReset}
+                            className="flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-sm border border-slate-200 text-slate-600 hover:border-primary-300 hover:text-primary-600 bg-white transition-all cursor-pointer"
+                        >
+                            Start Over
+                        </button>
+                    </div>
                 </div>
             ) : (
                 <>

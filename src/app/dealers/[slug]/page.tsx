@@ -8,7 +8,7 @@ import Image from "next/image";
 import MobileNav from "@/components/navigation/MobileNav";
 import CarCard from "@/components/ui/CarCard";
 import { SkeletonGrid } from "@/components/ui/SkeletonLoader";
-import { Store, MapPin, ChevronLeft } from "lucide-react";
+import { Store, MapPin, ChevronLeft, Car } from "lucide-react";
 
 export default function DealerDetailsPage() {
     const params = useParams();
@@ -84,9 +84,35 @@ export default function DealerDetailsPage() {
                 {vehicles === undefined ? (
                     <SkeletonGrid />
                 ) : vehicles.length === 0 ? (
-                    <div className="card-premium p-12 text-center rounded-3xl border-dashed border-2 bg-slate-50/50">
-                        <h3 className="text-xl font-bold text-slate-900 mb-2">No Vehicles Found</h3>
-                        <p className="text-slate-500 font-medium">This dealership doesn't have any cars listed right now.</p>
+                    <div className="flex flex-col items-center justify-center py-20 px-6 text-center rounded-[2.5rem] border border-dashed border-slate-200 bg-gradient-to-br from-slate-50 to-white space-y-5">
+                        <div className="relative w-24 h-24 flex items-center justify-center">
+                            <div className="absolute inset-0 bg-amber-400/10 rounded-full blur-xl animate-pulse" />
+                            <div className="relative w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl flex items-center justify-center shadow-xl border border-amber-400/20">
+                                <Car size={36} className="text-white" />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2 max-w-xs">
+                            <h3 className="text-xl font-black text-slate-900">No Vehicles Listed</h3>
+                            <p className="text-slate-500 text-sm font-medium leading-relaxed">
+                                {dealer.name} hasn't added any cars yet. Check back soon or browse other dealers.
+                            </p>
+                        </div>
+
+                        <div className="flex gap-3 flex-wrap justify-center">
+                            <Link
+                                href="/dealers"
+                                className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-black text-sm px-6 py-3 rounded-2xl shadow-lg shadow-primary-200 transition-all"
+                            >
+                                <ChevronLeft size={16} /> All Dealers
+                            </Link>
+                            <Link
+                                href="/search"
+                                className="inline-flex items-center gap-2 border border-slate-200 text-slate-700 hover:border-primary-300 hover:text-primary-600 font-black text-sm px-6 py-3 rounded-2xl bg-white transition-all"
+                            >
+                                Browse All Cars
+                            </Link>
+                        </div>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
