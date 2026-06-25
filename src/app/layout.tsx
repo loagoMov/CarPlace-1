@@ -2,14 +2,15 @@
 
 import { Inter } from "next/font/google";
 import "./globals.css";
-import {
-    SignInButton,
-    Show,
-    UserButton,
-} from "@clerk/nextjs";
 import { ConvexClientProvider } from "@/components/ConvexClientProvider";
+import Footer from "@/components/ui/Footer";
 
 const inter = Inter({ subsets: ["latin"] });
+
+export const metadata = {
+    title: "CarPlace — Find Your Next Car in Botswana",
+    description: "CarPlace is Botswana's premier digital car marketplace connecting buyers with trusted dealerships in Gaborone and across the country.",
+};
 
 export default function RootLayout({
     children,
@@ -20,19 +21,12 @@ export default function RootLayout({
         <ConvexClientProvider>
             <html lang="en">
                 <body className={inter.className}>
-                    <header className="hidden lg:flex px-4 py-2 justify-end absolute top-0 right-0 z-50">
-                        <Show when="signed-out">
-                            <div className="flex gap-4">
-                                <SignInButton mode="modal">
-                                    <button className="text-sm font-bold text-slate-600 hover:text-primary-600 transition-colors">Sign In</button>
-                                </SignInButton>
-                            </div>
-                        </Show>
-                        <Show when="signed-in">
-                            <UserButton />
-                        </Show>
-                    </header>
-                    {children}
+                    <div className="min-h-screen flex flex-col justify-between">
+                        <main className="flex-1">
+                            {children}
+                        </main>
+                        <Footer />
+                    </div>
                 </body>
             </html>
         </ConvexClientProvider>

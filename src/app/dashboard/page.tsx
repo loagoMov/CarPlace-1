@@ -423,8 +423,20 @@ export default function DealerDashboard() {
                         </table>
 
                         {vehicles && vehicles.length === 0 && (
-                            <div className="p-8 text-center">
-                                <p className="text-slate-500 font-medium">No vehicles listed yet. Add your first car!</p>
+                            <div className="py-12 px-4 text-center flex flex-col items-center justify-center space-y-4">
+                                <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-full flex items-center justify-center text-slate-400">
+                                    <Car size={22} />
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-slate-900 font-black text-base">No vehicles listed yet</p>
+                                    <p className="text-slate-400 text-xs font-bold">Start selling by adding your first vehicle to the inventory.</p>
+                                </div>
+                                <button
+                                    onClick={() => setShowAddVehicle(true)}
+                                    className="bg-primary-600 hover:bg-primary-700 text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-lg shadow-primary-100 transition-all cursor-pointer flex items-center gap-1.5"
+                                >
+                                    <Plus size={14} /> Add Vehicle
+                                </button>
                             </div>
                         )}
                     </div>

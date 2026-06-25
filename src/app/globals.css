@@ -25,6 +25,9 @@ body {
       transparent,
       rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
 }
 
 /* Glassmorphism bottom nav */
@@ -50,7 +53,7 @@ body {
 
 .card-premium:hover {
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.12);
-  transform: translateY(-4px);
+  transform: translateY(-2px);
 }
 
 /* Primary button */
@@ -73,6 +76,13 @@ body {
 
 .btn-primary:active {
   transform: scale(0.97);
+}
+
+/* Legal text styling */
+.legal-prose {
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: #334155; /* slate-700 */
 }
 
 /* Hide scrollbar */

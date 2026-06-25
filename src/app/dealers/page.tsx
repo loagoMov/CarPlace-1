@@ -36,10 +36,39 @@ export default function DealersPage() {
                     ))}
                 </div>
             ) : dealers.length === 0 ? (
-                <div className="card-premium p-12 text-center">
-                    <Store className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-slate-900">No Dealerships Found</h3>
-                    <p className="text-slate-500 mt-2">There are currently no registered dealerships on CarPlace.</p>
+                <div className="flex flex-col items-center justify-center py-24 px-6 text-center rounded-[2.5rem] border border-dashed border-slate-200 bg-gradient-to-br from-slate-50 to-white space-y-6">
+                    {/* Animated icon */}
+                    <div className="relative w-28 h-28 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-primary-400/10 rounded-full blur-2xl animate-pulse" />
+                        <div className="relative w-24 h-24 bg-gradient-to-br from-primary-500 to-violet-600 rounded-[2rem] flex items-center justify-center shadow-2xl border border-primary-400/20">
+                            <Store className="text-white" size={44} />
+                        </div>
+                    </div>
+
+                    {/* Text */}
+                    <div className="space-y-2 max-w-sm">
+                        <h3 className="text-2xl font-black text-slate-900">No Dealerships Yet</h3>
+                        <p className="text-slate-500 text-sm font-medium leading-relaxed">
+                            CarPlace is growing — dealerships are being onboarded. Check back soon or register your own showroom.
+                        </p>
+                    </div>
+
+                    {/* Stats / badges */}
+                    <div className="flex gap-3 flex-wrap justify-center">
+                        {["Verified Dealers", "Secure Transactions", "Local Inventory"].map((badge) => (
+                            <span key={badge} className="px-3 py-1.5 bg-white border border-slate-200 rounded-full text-[11px] font-black uppercase tracking-widest text-slate-500 shadow-sm">
+                                ✓ {badge}
+                            </span>
+                        ))}
+                    </div>
+
+                    {/* CTA */}
+                    <Link
+                        href="/search"
+                        className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-black text-sm px-8 py-3.5 rounded-2xl shadow-lg shadow-primary-200 transition-all"
+                    >
+                        Browse All Listings <ChevronRight size={16} />
+                    </Link>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
