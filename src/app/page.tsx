@@ -153,7 +153,7 @@ export default function Home() {
             </header>
 
             {/* Featured Listings Horizontal Carousel */}
-            {vehicles && vehicles.length > 0 && (
+            {featuredVehicles && featuredVehicles.length > 0 && (
                 <section className="mb-10">
                     <div className="flex justify-between items-end mb-6">
                         <div className="flex items-center gap-2">
@@ -165,7 +165,7 @@ export default function Home() {
                         </div>
                     </div>
                     <div className="-mx-4 sm:mx-0">
-                        <FeaturedCarousel cars={vehicles} />
+                        <FeaturedCarousel cars={featuredVehicles} />
                     </div>
                 </section>
             )}
