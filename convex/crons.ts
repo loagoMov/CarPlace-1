@@ -9,4 +9,10 @@ crons.interval(
     internal.featured.clearExpired
 );
 
+crons.interval(
+    "sweep invoices for overdue status and freezing",
+    { hours: 24 },
+    internal.billing_crons.sweepInvoices
+);
+
 export default crons;

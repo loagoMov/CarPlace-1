@@ -4,6 +4,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import MobileNav from "@/components/navigation/MobileNav";
 import CarCard from "@/components/ui/CarCard";
+import NotificationCenter from "./components/NotificationCenter";
 import FeaturedCarousel from "@/components/ui/FeaturedCarousel";
 import { SkeletonGrid } from "@/components/ui/SkeletonLoader";
 import { Search, MapPin, SlidersHorizontal, Sparkles, Clock, ArrowRight, Heart } from "lucide-react";

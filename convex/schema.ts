@@ -11,9 +11,45 @@ export default defineSchema({
         rating: v.optional(v.number()),
         authorizedEmails: v.optional(v.array(v.string())),
         phone: v.optional(v.string()),
+        clientCustomId: v.optional(v.string()),
+        bursTin: v.optional(v.string()),
+        accountStatus: v.optional(v.union(v.literal("active"), v.literal("frozen"))),
+        knownBankAliases: v.optional(v.array(v.string())),
     })
         .index("by_slug", ["slug"])
-        .index("by_clerk_org_id", ["clerkOrgId"]),
+        .index("by_clerk_org_id", ["clerkOrgId"])
+        .index("by_custom_id", ["clientCustomId"])
+        .index("by_account_status", ["accountStatus"]),
+
+    invoices: defineTable({
+        dealerId: v.id("dealerships"),
+        invoiceNumber: v.string(),
+        amount: v.number(), // in Pula cents
+        status: v.union(v.literal("pending"), v.literal("paid"), v.literal("overdue")),
+        dueDate: v.string(),
+        externalPdfUrl: v.string(),
+    })
+        .index("by_dealer", ["dealerId"])
+        .index("by_status", ["status"])
+        .index("by_due_date", ["dueDate"]),
+
+    notifications: defineTable({
+        recipientId: v.union(v.id("dealerships"), v.literal("admin")),
+        type: v.union(
+            v.literal("billing"),
+            v.literal("account"),
+            v.literal("system")
+        ),
+        title: v.string(),
+        message: v.string(),
+        isRead: v.boolean(),
+        createdAt: v.number(),
+        actionUrl: v.optional(v.string()),
+    })
+        .index("by_recipient", ["recipientId"])
+        .index("by_status", ["isRead"])
+        .index("by_recipient_and_status", ["recipientId", "isRead"])
+        .index("by_created_at", ["createdAt"]),
 
     vehicles: defineTable({
         dealerId: v.id("dealerships"),
