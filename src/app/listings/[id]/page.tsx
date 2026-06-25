@@ -45,7 +45,7 @@ export default function VehicleDetails() {
     const images = (vehicle.imageUrls && vehicle.imageUrls.length > 0) ? vehicle.imageUrls : ["/placeholder-car.jpg"];
 
     const dealerPhone = vehicle.dealer?.phone ?? "";
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://car-place-1.vercel.app";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://carplacebw.vercel.app";
     const listingUrl = typeof window !== "undefined"
         ? window.location.href
         : `${siteUrl}/listings/${params.id}`;
