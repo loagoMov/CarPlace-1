@@ -57,6 +57,17 @@ export const submit = mutation({
             status:         "open",
         });
 
+        // Push notification to admins
+        await ctx.db.insert("notifications", {
+            recipientId: "admin",
+            type: "system",
+            title: "New Vehicle Report Submitted",
+            message: `A report has been submitted for ${vehicle.year} ${vehicle.make} ${vehicle.model} (Dealer: ${dealer.name}). Reason: ${args.reason}`,
+            isRead: false,
+            createdAt: Date.now(),
+            actionUrl: "/admin?tab=reports",
+        });
+
         // Fire-and-forget: notify admins via email without blocking the response
         await ctx.scheduler.runAfter(0, internal.email.sendAdminNotification, {
             type: "report",

@@ -4,9 +4,10 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { UserButton, useOrganization, useOrganizationList, OrganizationSwitcher, CreateOrganization, OrganizationList, useUser } from "@clerk/nextjs";
 import MobileNav from "@/components/navigation/MobileNav";
-import { Plus, TrendingUp, Car, Building2, Loader2, Flame, Shield, Users, Trash2, Phone } from "lucide-react";
+import { Plus, TrendingUp, Car, Building2, Loader2, Flame, Shield, Users, Trash2, Phone, CreditCard } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect } from "react";
+import NotificationCenter from "../components/NotificationCenter";
 import AddVehicleForm from "@/components/dashboard/AddVehicleForm";
 import EditVehicleForm from "@/components/dashboard/EditVehicleForm";
 import PromotionModal from "@/components/dashboard/PromotionModal";
@@ -269,10 +270,14 @@ export default function DealerDashboard() {
                             Manage {organization.name}
                         </p>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
+                        <Link href="/dashboard/billing" className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold rounded-xl transition-colors">
+                            <CreditCard size={15} /> Billing
+                        </Link>
                         <Link href="/dashboard/analytics" className="px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors text-sm">
                             View Analytics
                         </Link>
+                        <NotificationCenter recipientId={dealership._id} />
                         <UserButton />
                     </div>
                 </div>

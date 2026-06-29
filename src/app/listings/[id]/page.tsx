@@ -156,10 +156,10 @@ export default function VehicleDetails() {
                 </div>
 
                 <div className="flex flex-col lg:flex-row gap-8">
-                    {/* Left Column: Gallery */}
-                    <div className="lg:w-3/5">
+                    {/* Left Column: Gallery — sticky wrapper keeps entire image block pinned */}
+                    <div className="lg:w-3/5 lg:sticky lg:top-8 lg:self-start">
                         <div
-                            className="relative aspect-[4/3] lg:rounded-3xl lg:overflow-hidden lg:shadow-xl lg:sticky lg:top-8 select-none"
+                            className="relative aspect-[4/3] lg:rounded-3xl lg:overflow-hidden lg:shadow-xl select-none"
                             onTouchStart={(e) => setTouchStartX(e.touches[0].clientX)}
                             onTouchEnd={(e) => {
                                 if (touchStartX === null) return;
@@ -220,13 +220,14 @@ export default function VehicleDetails() {
                             )}
                         </div>
 
+                        {/* Thumbnail strip — lives inside the sticky wrapper so it pins with the main image */}
                         {images.length > 1 && (
-                            <div className="hidden lg:flex gap-2 mt-3 overflow-x-auto pb-1">
+                            <div className="hidden lg:flex gap-2 mt-3 overflow-x-auto pb-1 no-scrollbar">
                                 {images.map((src, i) => (
                                     <button
                                         key={src}
                                         onClick={() => setActiveImage(i)}
-                                        className={`relative flex-none w-16 h-12 rounded-xl overflow-hidden ring-2 transition-all ${i === activeImage ? "ring-primary-500" : "ring-transparent opacity-60 hover:opacity-100"}`}
+                                        className={`relative flex-none w-16 h-12 rounded-xl overflow-hidden ring-2 transition-all ${i === activeImage ? "ring-primary-500 shadow-md" : "ring-transparent opacity-60 hover:opacity-90"}`}
                                     >
                                         <Image src={src} alt={`Thumbnail ${i + 1}`} fill sizes="64px" className="object-cover" />
                                     </button>

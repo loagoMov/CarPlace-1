@@ -11,9 +11,48 @@ export default defineSchema({
         rating: v.optional(v.number()),
         authorizedEmails: v.optional(v.array(v.string())),
         phone: v.optional(v.string()),
+        clientCustomId: v.optional(v.string()),
+        bursTin: v.optional(v.string()),
+        accountStatus: v.optional(v.union(v.literal("active"), v.literal("frozen"))),
+        knownBankAliases: v.optional(v.array(v.string())),
     })
         .index("by_slug", ["slug"])
-        .index("by_clerk_org_id", ["clerkOrgId"]),
+        .index("by_clerk_org_id", ["clerkOrgId"])
+        .index("by_custom_id", ["clientCustomId"])
+        .index("by_account_status", ["accountStatus"]),
+
+    invoices: defineTable({
+        dealerId: v.id("dealerships"),
+        invoiceNumber: v.string(),                 // e.g. CP/2026/06/MAS/0001
+        dealerName: v.optional(v.string()),        // snapshot of dealer name at issue time (optional for legacy records)
+        description: v.optional(v.string()),       // human-readable line-item summary (optional for legacy records)
+        amount: v.number(),                        // in Pula cents
+        status: v.union(v.literal("pending"), v.literal("paid"), v.literal("overdue")),
+        issuedAt: v.optional(v.number()),          // epoch ms — when admin issued the invoice (optional for legacy records)
+        dueDate: v.string(),                       // ISO date string
+        externalPdfUrl: v.string(),
+    })
+        .index("by_dealer", ["dealerId"])
+        .index("by_status", ["status"])
+        .index("by_due_date", ["dueDate"]),
+
+    notifications: defineTable({
+        recipientId: v.union(v.id("dealerships"), v.literal("admin")),
+        type: v.union(
+            v.literal("billing"),
+            v.literal("account"),
+            v.literal("system")
+        ),
+        title: v.string(),
+        message: v.string(),
+        isRead: v.boolean(),
+        createdAt: v.number(),
+        actionUrl: v.optional(v.string()),
+    })
+        .index("by_recipient", ["recipientId"])
+        .index("by_status", ["isRead"])
+        .index("by_recipient_and_status", ["recipientId", "isRead"])
+        .index("by_created_at", ["createdAt"]),
 
     vehicles: defineTable({
         dealerId: v.id("dealerships"),

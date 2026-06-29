@@ -8,11 +8,14 @@
  * @module
  */
 
+import type * as billing from "../billing.js";
+import type * as billing_crons from "../billing_crons.js";
 import type * as crons from "../crons.js";
 import type * as dealerships from "../dealerships.js";
 import type * as email from "../email.js";
 import type * as featured from "../featured.js";
 import type * as http from "../http.js";
+import type * as notifications from "../notifications.js";
 import type * as rateLimit from "../rateLimit.js";
 import type * as reports from "../reports.js";
 import type * as searchHistory from "../searchHistory.js";
@@ -27,11 +30,14 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  billing: typeof billing;
+  billing_crons: typeof billing_crons;
   crons: typeof crons;
   dealerships: typeof dealerships;
   email: typeof email;
   featured: typeof featured;
   http: typeof http;
+  notifications: typeof notifications;
   rateLimit: typeof rateLimit;
   reports: typeof reports;
   searchHistory: typeof searchHistory;

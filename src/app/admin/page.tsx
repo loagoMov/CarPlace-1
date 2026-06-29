@@ -6,10 +6,12 @@ import { api } from "../../../convex/_generated/api";
 import { useUser, UserButton } from "@clerk/nextjs";
 import {
     Shield, Users, Building2, Star, Plus, Trash2, Check, Loader2,
-    AlertTriangle, Flag, Eye, XCircle, ChevronDown, ChevronUp, MessageSquare, Sparkles, Car
+    AlertTriangle, Flag, Eye, XCircle, ChevronDown, ChevronUp, MessageSquare, Sparkles, Car, CreditCard
 } from "lucide-react";
-import { useState, Fragment } from "react";
+import { useState, Fragment, useEffect } from "react";
+import Link from "next/link";
 import MobileNav from "@/components/navigation/MobileNav";
+import NotificationCenter from "../components/NotificationCenter";
 
 const REASON_LABELS: Record<string, string> = {
     fraudulent_listing:   "🚨 Fraudulent Listing",
@@ -161,6 +163,16 @@ export default function GlobalAdminDashboard() {
     const [adminNoteInput,   setAdminNoteInput]     = useState<Record<string, string>>({});
     const [activeTab,        setActiveTab]          = useState<"dealerships" | "reports" | "promotions">("dealerships");
 
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search);
+            const tab = params.get("tab");
+            if (tab === "reports" || tab === "promotions" || tab === "dealerships") {
+                setActiveTab(tab as "dealerships" | "reports" | "promotions");
+            }
+        }
+    }, []);
+
     if (!isLoaded || isGlobalAdmin === undefined) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -260,7 +272,16 @@ export default function GlobalAdminDashboard() {
                             </p>
                         </div>
                     </div>
-                    <UserButton />
+                    <div className="flex items-center gap-3">
+                        <Link
+                            href="/admin/billing"
+                            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold rounded-xl transition-colors"
+                        >
+                            <CreditCard size={15} /> Billing Portal
+                        </Link>
+                        <NotificationCenter recipientId="admin" />
+                        <UserButton />
+                    </div>
                 </div>
             </header>
 
