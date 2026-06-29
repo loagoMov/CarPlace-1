@@ -8,7 +8,7 @@ import {
     Shield, Users, Building2, Star, Plus, Trash2, Check, Loader2,
     AlertTriangle, Flag, Eye, XCircle, ChevronDown, ChevronUp, MessageSquare, Sparkles, Car, CreditCard
 } from "lucide-react";
-import { useState, Fragment } from "react";
+import { useState, Fragment, useEffect } from "react";
 import Link from "next/link";
 import MobileNav from "@/components/navigation/MobileNav";
 import NotificationCenter from "../components/NotificationCenter";
@@ -162,6 +162,16 @@ export default function GlobalAdminDashboard() {
     const [expandedReport,   setExpandedReport]     = useState<string | null>(null);
     const [adminNoteInput,   setAdminNoteInput]     = useState<Record<string, string>>({});
     const [activeTab,        setActiveTab]          = useState<"dealerships" | "reports" | "promotions">("dealerships");
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search);
+            const tab = params.get("tab");
+            if (tab === "reports" || tab === "promotions" || tab === "dealerships") {
+                setActiveTab(tab as "dealerships" | "reports" | "promotions");
+            }
+        }
+    }, []);
 
     if (!isLoaded || isGlobalAdmin === undefined) {
         return (

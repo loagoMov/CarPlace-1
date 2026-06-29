@@ -16,6 +16,16 @@ export const sweepInvoices = internalMutation({
             if (dueDate < now && invoice.status !== "overdue") {
                 // If it's just past due, we can mark it as overdue or just wait for the freeze
                 await ctx.db.patch(invoice._id, { status: "overdue" });
+                
+                await ctx.db.insert("notifications", {
+                    recipientId: invoice.dealerId,
+                    type: "billing",
+                    title: "Invoice Overdue Warning",
+                    message: `Invoice ${invoice.invoiceNumber} for P ${(invoice.amount / 100).toFixed(2)} is now overdue. Please pay to avoid suspension.`,
+                    isRead: false,
+                    createdAt: Date.now(),
+                    actionUrl: "/dashboard/billing",
+                });
             }
 
             if (dueDate < overdueThreshold) {
@@ -23,6 +33,16 @@ export const sweepInvoices = internalMutation({
                 const dealer = await ctx.db.get(invoice.dealerId);
                 if (dealer && dealer.accountStatus !== "frozen") {
                     await ctx.db.patch(dealer._id, { accountStatus: "frozen" });
+                    
+                    await ctx.db.insert("notifications", {
+                        recipientId: dealer._id,
+                        type: "account",
+                        title: "Account Suspended",
+                        message: "Your account features have been suspended due to outstanding overdue invoices.",
+                        isRead: false,
+                        createdAt: Date.now(),
+                        actionUrl: "/dashboard/billing",
+                    });
                 }
             }
         }

@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Search, Store, User, LayoutDashboard, LogIn, Shield } from "lucide-react";
@@ -11,6 +14,51 @@ export default function MobileNav() {
     const { user } = useUser();
     const isGlobalAdmin = useQuery(api.dealerships.checkGlobalAdmin);
     const pathname = usePathname();
+
+    const [isMinimized, setIsMinimized] = useState(false);
+
+    useEffect(() => {
+        let lastScrollY = window.scrollY;
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+            // Collapse on scroll down past threshold, expand on scroll up
+            if (currentScrollY > 80 && currentScrollY > lastScrollY) {
+                setIsMinimized(true);
+            } else if (currentScrollY < lastScrollY - 8 || currentScrollY <= 30) {
+                setIsMinimized(false);
+            }
+            lastScrollY = currentScrollY;
+        };
+
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+
+    const tabs = [
+        { href: "/", icon: Home, label: "Home", exact: true },
+        { href: "/search", icon: Search, label: "Search" },
+        { href: "/dealers", icon: Store, label: "Dealers" },
+        ...(orgLoaded && organization ? [{ href: "/dashboard", icon: LayoutDashboard, label: "Dealer" }] : []),
+        ...(isGlobalAdmin ? [{ href: "/admin", icon: Shield, label: "Admin" }] : []),
+        ...(authLoaded && isSignedIn ? [{ href: "/profile", icon: User, label: "Profile" }] : []),
+    ];
+
+    const activeTab = tabs.find(t => t.exact ? pathname === t.href : pathname?.startsWith(t.href)) ?? tabs[0];
+    const ActiveIcon = activeTab.icon;
+
+    if (isMinimized) {
+        return (
+            <button
+                onClick={() => setIsMinimized(false)}
+                className="fixed bottom-6 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full glass-nav flex items-center justify-center z-50 transition-all duration-300 ease-out shadow-lg hover:scale-105 active:scale-95 cursor-pointer border border-white/20 animate-in zoom-in duration-200"
+                title={`Expand menu (${activeTab.label})`}
+            >
+                <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center text-primary-600 shadow-sm">
+                    <ActiveIcon size={20} className="animate-pulse" />
+                </div>
+            </button>
+        );
+    }
 
     const NavLink = ({ href, icon: Icon, label, exact = false }: { href: string; icon: any; label: string; exact?: boolean }) => {
         const isActive = exact ? pathname === href : pathname?.startsWith(href);
@@ -30,17 +78,15 @@ export default function MobileNav() {
     };
 
     return (
-        <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[95%] max-w-md glass-nav rounded-2xl p-2 flex justify-around items-center z-50">
+        <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[95%] max-w-md glass-nav rounded-2xl p-2 flex justify-around items-center z-50 transition-all duration-300 ease-out shadow-xl border border-white/20 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <NavLink href="/" icon={Home} label="Home" exact />
             <NavLink href="/search" icon={Search} label="Search" />
             <NavLink href="/dealers" icon={Store} label="Dealers" />
 
-            {/* Only show Dealer tab if they belong to an organization and Clerk has loaded */}
             {orgLoaded && organization && (
                 <NavLink href="/dashboard" icon={LayoutDashboard} label="Dealer" />
             )}
 
-            {/* Global Admin tab — only visible to registered CarPlace admins */}
             {isGlobalAdmin && (
                 <NavLink href="/admin" icon={Shield} label="Admin" />
             )}

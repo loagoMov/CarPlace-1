@@ -49,6 +49,12 @@ export default function AdminBillingPage() {
     const [expandedDealerId, setExpandedDealerId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<"roster" | "parser">("roster");
 
+    const [showInvoiceForm, setShowInvoiceForm] = useState(false);
+    const [formDealerId, setFormDealerId] = useState("");
+    const [formAmount, setFormAmount] = useState("");
+    const [formDueDate, setFormDueDate] = useState("");
+    const [isSubmittingInvoice, setIsSubmittingInvoice] = useState(false);
+
     const pendingInvoices = useQuery(api.billing.getPendingInvoices) || [];
     const dealers = useQuery(api.billing.getAllDealers) || [];
     const rosterData = useQuery(api.billing.getAllDealersBillingSummary) || [];
@@ -57,6 +63,30 @@ export default function AdminBillingPage() {
     const linkManualAliasToDealer = useMutation(api.billing.linkManualAliasToDealer);
     const markInvoiceAsPaid = useMutation(api.billing.markInvoiceAsPaid);
     const pushNotification = useMutation(api.notifications.pushNotification);
+    const createOfficialInvoice = useMutation(api.billing.createOfficialInvoice);
+    const manualUpdateAccountStatus = useMutation(api.billing.manualUpdateAccountStatus);
+
+    const handleCreateInvoice = async () => {
+        if (!formDealerId || !formAmount || !formDueDate) return;
+        setIsSubmittingInvoice(true);
+        try {
+            const amountCents = Math.round(parseFloat(formAmount) * 100);
+            await createOfficialInvoice({
+                dealerId: formDealerId as Id<"dealerships">,
+                amount: amountCents,
+                dueDate: new Date(formDueDate).toISOString(),
+            });
+            alert("Invoice created successfully and notification sent to the dealership.");
+            setFormDealerId("");
+            setFormAmount("");
+            setFormDueDate("");
+            setShowInvoiceForm(false);
+        } catch (err: any) {
+            alert(err.message || "Failed to create invoice.");
+        } finally {
+            setIsSubmittingInvoice(false);
+        }
+    };
 
     const isSyncConnected = rosterData !== undefined;
     const totalOverdue = rosterData.filter(r => r.health === "critical").length;
@@ -223,10 +253,75 @@ export default function AdminBillingPage() {
                     <section className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                         <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
                             <h2 className="font-black text-slate-900">Dealer Payment Roster</h2>
-                            <span className="text-xs font-bold bg-slate-100 text-slate-600 px-3 py-1 rounded-full">
-                                {rosterData.length} dealers
-                            </span>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => setShowInvoiceForm(!showInvoiceForm)}
+                                    className="flex items-center gap-1.5 text-xs font-black bg-primary-600 text-white px-3 py-1.5 rounded-xl hover:bg-primary-700 transition active:scale-95 cursor-pointer shadow-sm"
+                                >
+                                    <PlusCircle size={14} /> Issue Invoice
+                                </button>
+                                <span className="text-xs font-bold bg-slate-100 text-slate-600 px-3 py-1 rounded-full">
+                                    {rosterData.length} dealers
+                                </span>
+                            </div>
                         </div>
+
+                        {showInvoiceForm && (
+                            <div className="p-6 bg-slate-50 border-b border-slate-150 grid grid-cols-1 md:grid-cols-4 gap-4 items-end animate-in fade-in duration-200">
+                                <div>
+                                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Select Dealership</label>
+                                    <select
+                                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                        value={formDealerId}
+                                        onChange={e => setFormDealerId(e.target.value)}
+                                    >
+                                        <option value="">Choose dealership...</option>
+                                        {dealers.map(d => (
+                                            <option key={d._id} value={d._id}>{d.name} ({d.clientCustomId ?? "No custom ID"})</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Amount (Pula)</label>
+                                    <input
+                                        type="number"
+                                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                        placeholder="e.g. 1500"
+                                        value={formAmount}
+                                        onChange={e => setFormAmount(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Due Date</label>
+                                    <input
+                                        type="date"
+                                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                        value={formDueDate}
+                                        onChange={e => setFormDueDate(e.target.value)}
+                                    />
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={handleCreateInvoice}
+                                        disabled={isSubmittingInvoice || !formDealerId || !formAmount || !formDueDate}
+                                        className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-black text-xs py-2.5 rounded-xl transition disabled:opacity-50 cursor-pointer text-center"
+                                    >
+                                        {isSubmittingInvoice ? "Processing..." : "Create Invoice"}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowInvoiceForm(false);
+                                            setFormDealerId("");
+                                            setFormAmount("");
+                                            setFormDueDate("");
+                                        }}
+                                        className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs py-2.5 px-4 rounded-xl transition cursor-pointer"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
                         {rosterData.length === 0 ? (
                             <div className="p-16 flex flex-col items-center text-center gap-4">
@@ -314,8 +409,51 @@ export default function AdminBillingPage() {
 
                                             {/* Expanded Invoice Detail */}
                                             {isExpanded && (
-                                                <div className="bg-slate-50 border-t border-slate-100 px-6 py-5">
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Invoice History</p>
+                                                <div className="bg-slate-50 border-t border-slate-100 px-6 py-5 space-y-6">
+                                                    {/* Manual Account Status Controls */}
+                                                    <div className="bg-white rounded-xl border border-slate-100 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                        <div>
+                                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Account Status Override</p>
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <span className={`w-2.5 h-2.5 rounded-full ${
+                                                                    row.dealer.accountStatus === "frozen" ? "bg-rose-500 animate-pulse" : "bg-emerald-500"
+                                                                }`} />
+                                                                <span className="font-bold text-slate-800 text-sm">
+                                                                    {row.dealer.accountStatus === "frozen" ? "Suspended (Frozen)" : "Active"}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-[11px] text-slate-400 mt-1">
+                                                                Manually freeze or activate the lead generation features of this dealer.
+                                                            </p>
+                                                        </div>
+                                                        <button
+                                                            onClick={async (e) => {
+                                                                e.stopPropagation();
+                                                                const nextStatus = row.dealer.accountStatus === "frozen" ? "active" : "frozen";
+                                                                const verb = nextStatus === "frozen" ? "pause & freeze" : "reactivate";
+                                                                if (confirm(`Are you sure you want to ${verb} ${row.dealer.name}'s account?`)) {
+                                                                    try {
+                                                                        await manualUpdateAccountStatus({
+                                                                            dealerId: row.dealer._id,
+                                                                            status: nextStatus,
+                                                                        });
+                                                                    } catch (err: any) {
+                                                                        alert(err.message || "Failed to update account status.");
+                                                                    }
+                                                                }
+                                                            }}
+                                                            className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer shadow-sm active:scale-95 ${
+                                                                row.dealer.accountStatus === "frozen"
+                                                                    ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                                                                    : "bg-rose-600 hover:bg-rose-700 text-white"
+                                                            }`}
+                                                        >
+                                                            {row.dealer.accountStatus === "frozen" ? "Reactivate Account" : "Pause Account completely"}
+                                                        </button>
+                                                    </div>
+
+                                                    <div>
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Invoice History</p>
                                                     {[...row.overdue, ...row.pending, ...row.paid].length === 0 ? (
                                                         <p className="text-sm text-slate-400">No invoices on record.</p>
                                                     ) : (
@@ -352,18 +490,19 @@ export default function AdminBillingPage() {
                                                                         </button>
                                                                     )}
                                                                     <a
-                                                                        href={inv.externalPdfUrl}
+                                                                        href={`https://carplacebw.vercel.app/invoice?dealer=${encodeURIComponent(row.dealer.name)}&tin=${encodeURIComponent(row.dealer.bursTin || "000000000")}&inv=${encodeURIComponent(inv.invoiceNumber)}&vat=0&amount=${(inv.amount / 100).toFixed(2)}&due=${encodeURIComponent(inv.dueDate)}`}
                                                                         target="_blank"
                                                                         rel="noopener noreferrer"
                                                                         onClick={e => e.stopPropagation()}
-                                                                        className="flex items-center gap-1 text-xs font-bold text-primary-600 hover:underline"
+                                                                        className="flex items-center gap-1 text-xs font-bold text-white bg-slate-700 hover:bg-slate-800 px-3 py-1.5 rounded-lg transition"
                                                                     >
-                                                                        PDF <ExternalLink size={10} />
+                                                                        <ExternalLink size={10} /> Download Invoice
                                                                     </a>
                                                                 </div>
                                                             ))}
                                                         </div>
                                                     )}
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>

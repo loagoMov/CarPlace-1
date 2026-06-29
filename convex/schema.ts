@@ -23,10 +23,13 @@ export default defineSchema({
 
     invoices: defineTable({
         dealerId: v.id("dealerships"),
-        invoiceNumber: v.string(),
-        amount: v.number(), // in Pula cents
+        invoiceNumber: v.string(),                 // e.g. CP/2026/06/MAS/0001
+        dealerName: v.optional(v.string()),        // snapshot of dealer name at issue time (optional for legacy records)
+        description: v.optional(v.string()),       // human-readable line-item summary (optional for legacy records)
+        amount: v.number(),                        // in Pula cents
         status: v.union(v.literal("pending"), v.literal("paid"), v.literal("overdue")),
-        dueDate: v.string(),
+        issuedAt: v.optional(v.number()),          // epoch ms — when admin issued the invoice (optional for legacy records)
+        dueDate: v.string(),                       // ISO date string
         externalPdfUrl: v.string(),
     })
         .index("by_dealer", ["dealerId"])

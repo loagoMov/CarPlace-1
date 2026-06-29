@@ -64,6 +64,17 @@ export const apply = mutation({
             appliedAt: Date.now(),
         });
 
+        // Push notification to admins
+        await ctx.db.insert("notifications", {
+            recipientId: "admin",
+            type: "system",
+            title: "New Promotion Request",
+            message: `${dealership.name} requested featured slot for ${vehicle.year} ${vehicle.make} ${vehicle.model} (${args.durationDays} days).`,
+            isRead: false,
+            createdAt: Date.now(),
+            actionUrl: "/admin?tab=promotions",
+        });
+
         // Fire-and-forget: notify admins of the new promotion request
         await ctx.scheduler.runAfter(0, internal.email.sendAdminNotification, {
             type: "promotion",
