@@ -7,7 +7,7 @@ import { Id } from "../../../convex/_generated/dataModel";
 import { X, Upload, CheckCircle2, AlertCircle } from "lucide-react";
 import { compressImage } from "@/utils/imageCompressor";
 
-// ─── Security constants ───────────────────────────────────────────────────────
+// ─── Security constants ──────────────────────────────────────────────────────
 const MAX_FILE_SIZE_MB = 5;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 const MAX_IMAGES = 10;
@@ -18,15 +18,20 @@ interface AddVehicleFormProps {
     onClose: () => void;
 }
 
+interface FilePreview {
+    file: File;
+    objectUrl: string;
+}
+
 export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProps) {
     const createVehicle = useMutation(api.vehicles.create);
     const generateUploadUrl = useMutation(api.vehicles.generateUploadUrl);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
     const [showFrozenModal, setShowFrozenModal] = useState(false);
-    const [exteriorFiles, setExteriorFiles] = useState<File[]>([]);
-    const [interiorFiles, setInteriorFiles] = useState<File[]>([]);
-    const [engineBayFiles, setEngineBayFiles] = useState<File[]>([]);
+    const [exteriorFiles, setExteriorFiles] = useState<FilePreview[]>([]);
+    const [interiorFiles, setInteriorFiles] = useState<FilePreview[]>([]);
+    const [engineBayFiles, setEngineBayFiles] = useState<FilePreview[]>([]);
     const [fileError, setFileError] = useState<string | null>(null);
     const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -75,17 +80,32 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
             }
         }
 
-        if (category === 'exterior') setExteriorFiles(prev => [...prev, ...newFiles]);
-        else if (category === 'interior') setInteriorFiles(prev => [...prev, ...newFiles]);
-        else setEngineBayFiles(prev => [...prev, ...newFiles]);
+        const filePreviews = newFiles.map(file => ({
+            file,
+            objectUrl: URL.createObjectURL(file)
+        }));
+
+        if (category === 'exterior') setExteriorFiles(prev => [...prev, ...filePreviews]);
+        else if (category === 'interior') setInteriorFiles(prev => [...prev, ...filePreviews]);
+        else setEngineBayFiles(prev => [...prev, ...filePreviews]);
         
         e.target.value = "";
     };
 
     const removeFile = (category: 'exterior' | 'interior' | 'engineBay', index: number) => {
-        if (category === 'exterior') setExteriorFiles(prev => prev.filter((_, i) => i !== index));
-        else if (category === 'interior') setInteriorFiles(prev => prev.filter((_, i) => i !== index));
-        else setEngineBayFiles(prev => prev.filter((_, i) => i !== index));
+        // Cleanup blob URL to prevent memory leaks
+        if (category === 'exterior') {
+            URL.revokeObjectURL(exteriorFiles[index].objectUrl);
+            setExteriorFiles(prev => prev.filter((_, i) => i !== index));
+        }
+        else if (category === 'interior') {
+            URL.revokeObjectURL(interiorFiles[index].objectUrl);
+            setInteriorFiles(prev => prev.filter((_, i) => i !== index));
+        }
+        else {
+            URL.revokeObjectURL(engineBayFiles[index].objectUrl);
+            setEngineBayFiles(prev => prev.filter((_, i) => i !== index));
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -98,7 +118,11 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
         try {
             // Upload files to Convex Storage first
             const storageIds: Id<"_storage">[] = [];
-            const allFiles = [...exteriorFiles, ...interiorFiles, ...engineBayFiles];
+            const allFiles = [
+                ...exteriorFiles.map(f => f.file),
+                ...interiorFiles.map(f => f.file),
+                ...engineBayFiles.map(f => f.file)
+            ];
             for (const file of allFiles) {
                 // Compress the image before uploading
                 const compressedFile = await compressImage(file, 1200, 0.82);
@@ -192,34 +216,34 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Make</label>
-                            <input name="make" required maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold" placeholder="e.g. Toyota" />
+                            <input name="make" required maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500" />
                         </div>
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Model</label>
-                            <input name="model" required maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold" placeholder="e.g. Hilux" />
+                            <input name="model" required maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500" />
                         </div>
                     </div>
 
                     <div className="grid grid-cols-3 gap-4">
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Year</label>
-                            <input name="year" type="number" required min={1900} max={2030} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold" placeholder="2022" />
+                            <input name="year" type="number" required min={1900} max={2030} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500" />
                         </div>
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Mileage (km)</label>
-                            <input type="text" value={mileageInput} onChange={handleMileageChange} required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold" placeholder="45,000" />
+                            <input type="text" value={mileageInput} onChange={handleMileageChange} required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500" />
                             <input type="hidden" name="mileage" value={mileageInput.replace(/\D/g, "")} />
                         </div>
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Price (BWP)</label>
-                            <input type="text" value={priceInput} onChange={handlePriceChange} required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold" placeholder="450,000" />
+                            <input type="text" value={priceInput} onChange={handlePriceChange} required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500" />
                             <input type="hidden" name="price" value={priceInput.replace(/\D/g, "")} />
                         </div>
                     </div>
 
                     <div className="space-y-2">
                         <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Category</label>
-                        <select name="category" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold appearance-none cursor-pointer">
+                        <select name="category" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500">
                             <option value="">Select Category</option>
                             <option value="suv">SUV</option>
                             <option value="sedan">Sedan</option>
@@ -235,7 +259,7 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Fuel Type</label>
-                            <select name="fuelType" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold appearance-none cursor-pointer">
+                            <select name="fuelType" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500">
                                 <option value="Petrol">Petrol</option>
                                 <option value="Diesel">Diesel</option>
                                 <option value="Hybrid">Hybrid</option>
@@ -244,7 +268,7 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
                         </div>
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Transmission</label>
-                            <select name="transmission" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold appearance-none cursor-pointer">
+                            <select name="transmission" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500">
                                 <option value="Automatic">Automatic</option>
                                 <option value="Manual">Manual</option>
                             </select>
@@ -254,17 +278,17 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Engine Size</label>
-                            <input name="engineSize" maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold" placeholder="e.g. 2.8L" />
+                            <input name="engineSize" maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500" />
                         </div>
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Color</label>
-                            <input name="color" maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold" placeholder="e.g. White" />
+                            <input name="color" maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500" />
                         </div>
                     </div>
 
                     <div className="space-y-2">
                         <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Description</label>
-                        <textarea name="description" rows={3} maxLength={2000} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold resize-none" placeholder="Enter vehicle highlights... (max 2000 characters)" />
+                        <textarea name="description" rows={3} maxLength={2000} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500" />
                     </div>
 
                     {/* Photo Upload Requirements */}
@@ -276,7 +300,7 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {/* Exterior */}
-                            <div className={`border-2 border-dashed ${exteriorFiles.length >= 2 ? 'border-emerald-200 bg-emerald-50/50' : 'border-slate-200'} rounded-2xl p-4 text-center space-y-2 hover:border-primary-400 transition-colors group block`}>
+                            <div className={`border-2 border-dashed ${exteriorFiles.length >= 2 ? 'border-emerald-200 bg-emerald-50/50' : 'border-slate-200'} rounded-2xl p-4 text-center space-y-2 group transition-all`}>
                                 <label className="cursor-pointer block">
                                     <Upload className={`mx-auto ${exteriorFiles.length >= 2 ? 'text-emerald-500' : 'text-slate-300 group-hover:text-primary-500'} transition-colors`} size={24} />
                                     <h5 className="font-bold text-slate-800 text-sm">Exterior</h5>
@@ -293,10 +317,10 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
                                 </label>
                                 {exteriorFiles.length > 0 && (
                                     <div className="flex flex-wrap justify-center gap-1.5 mt-3 pt-3 border-t border-slate-200/50">
-                                        {exteriorFiles.map((file, i) => (
+                                        {exteriorFiles.map((preview, i) => (
                                             <div key={i} className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 group/img">
                                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+                                                <img src={preview.objectUrl} alt="preview" className="w-full h-full object-cover" />
                                                 <button type="button" onClick={() => removeFile('exterior', i)} className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/img:opacity-100 flex items-center justify-center text-white transition-opacity">
                                                     <X size={14} />
                                                 </button>
@@ -307,7 +331,7 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
                             </div>
 
                             {/* Interior */}
-                            <div className={`border-2 border-dashed ${interiorFiles.length >= 2 ? 'border-emerald-200 bg-emerald-50/50' : 'border-slate-200'} rounded-2xl p-4 text-center space-y-2 hover:border-primary-400 transition-colors group block`}>
+                            <div className={`border-2 border-dashed ${interiorFiles.length >= 2 ? 'border-emerald-200 bg-emerald-50/50' : 'border-slate-200'} rounded-2xl p-4 text-center space-y-2 group transition-all`}>
                                 <label className="cursor-pointer block">
                                     <Upload className={`mx-auto ${interiorFiles.length >= 2 ? 'text-emerald-500' : 'text-slate-300 group-hover:text-primary-500'} transition-colors`} size={24} />
                                     <h5 className="font-bold text-slate-800 text-sm">Interior</h5>
@@ -324,10 +348,10 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
                                 </label>
                                 {interiorFiles.length > 0 && (
                                     <div className="flex flex-wrap justify-center gap-1.5 mt-3 pt-3 border-t border-slate-200/50">
-                                        {interiorFiles.map((file, i) => (
+                                        {interiorFiles.map((preview, i) => (
                                             <div key={i} className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 group/img">
                                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+                                                <img src={preview.objectUrl} alt="preview" className="w-full h-full object-cover" />
                                                 <button type="button" onClick={() => removeFile('interior', i)} className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/img:opacity-100 flex items-center justify-center text-white transition-opacity">
                                                     <X size={14} />
                                                 </button>
@@ -338,7 +362,7 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
                             </div>
 
                             {/* Engine Bay */}
-                            <div className={`border-2 border-dashed ${engineBayFiles.length >= 2 ? 'border-emerald-200 bg-emerald-50/50' : 'border-slate-200'} rounded-2xl p-4 text-center space-y-2 hover:border-primary-400 transition-colors group block`}>
+                            <div className={`border-2 border-dashed ${engineBayFiles.length >= 2 ? 'border-emerald-200 bg-emerald-50/50' : 'border-slate-200'} rounded-2xl p-4 text-center space-y-2 group transition-all`}>
                                 <label className="cursor-pointer block">
                                     <Upload className={`mx-auto ${engineBayFiles.length >= 2 ? 'text-emerald-500' : 'text-slate-300 group-hover:text-primary-500'} transition-colors`} size={24} />
                                     <h5 className="font-bold text-slate-800 text-sm">Engine Bay</h5>
@@ -355,10 +379,10 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
                                 </label>
                                 {engineBayFiles.length > 0 && (
                                     <div className="flex flex-wrap justify-center gap-1.5 mt-3 pt-3 border-t border-slate-200/50">
-                                        {engineBayFiles.map((file, i) => (
+                                        {engineBayFiles.map((preview, i) => (
                                             <div key={i} className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 group/img">
                                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+                                                <img src={preview.objectUrl} alt="preview" className="w-full h-full object-cover" />
                                                 <button type="button" onClick={() => removeFile('engineBay', i)} className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/img:opacity-100 flex items-center justify-center text-white transition-opacity">
                                                     <X size={14} />
                                                 </button>
