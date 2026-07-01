@@ -39,7 +39,7 @@ print(f"Convex URL: {CONVEX_URL}")
 # 1. Fetch telemetry logs from Convex HTTP endpoint
 try:
     export_url = f"{CONVEX_URL}/api/export-telemetry?secret={SYNC_SECRET}&since=0"
-    print(f"Fetching logs from: {export_url}")
+    print(f"Fetching logs from: {CONVEX_URL}/api/export-telemetry?secret=[REDACTED]&since=0")
     response = requests.get(export_url, timeout=10)
     response.raise_for_status()
     logs = response.json()
@@ -166,7 +166,7 @@ for row in results:
 if recommendations_payload:
     try:
         import_url = f"{CONVEX_URL}/api/import-recommendations?secret={SYNC_SECRET}"
-        print(f"Sending recommendations to: {import_url}")
+        print(f"Sending recommendations to: {CONVEX_URL}/api/import-recommendations?secret=[REDACTED]")
         headers = {"Content-Type": "application/json"}
         response = requests.post(import_url, json=recommendations_payload, headers=headers, timeout=10)
         response.raise_for_status()
@@ -213,7 +213,7 @@ for row in analytics_results:
 if analytics_payload:
     try:
         import_analytics_url = f"{CONVEX_URL}/api/import-analytics?secret={SYNC_SECRET}"
-        print(f"Sending analytics to: {import_analytics_url}")
+        print(f"Sending analytics to: {CONVEX_URL}/api/import-analytics?secret=[REDACTED]")
         headers = {"Content-Type": "application/json"}
         response = requests.post(import_analytics_url, json=analytics_payload, headers=headers, timeout=10)
         response.raise_for_status()

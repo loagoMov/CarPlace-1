@@ -8,6 +8,8 @@ on:
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Minimum required to checkout the repository
 
     steps:
       - name: Checkout repository
