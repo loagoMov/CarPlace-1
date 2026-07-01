@@ -28,7 +28,9 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
     const [isDeleting, setIsDeleting] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [success, setSuccess] = useState(false);
-    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [exteriorFiles, setExteriorFiles] = useState<File[]>([]);
+    const [interiorFiles, setInteriorFiles] = useState<File[]>([]);
+    const [engineBayFiles, setEngineBayFiles] = useState<File[]>([]);
     const [fileError, setFileError] = useState<string | null>(null);
     const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -51,19 +53,22 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
     };
 
     // V-07 fix: validate file MIME type and size before accepting
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = (category: 'exterior' | 'interior' | 'engineBay') => (e: React.ChangeEvent<HTMLInputElement>) => {
         setFileError(null);
         if (!e.target.files) return;
-        const files = Array.from(e.target.files);
+        const newFiles = Array.from(e.target.files);
 
-        const totalImages = (vehicle.images?.length ?? 0) + files.length;
+        const currentNewFiles = exteriorFiles.length + interiorFiles.length + engineBayFiles.length;
+        const newTotalNewFiles = currentNewFiles + newFiles.length;
+
+        const totalImages = (vehicle.images?.length ?? 0) + newTotalNewFiles;
         if (totalImages > MAX_IMAGES) {
             setFileError(`Total images cannot exceed ${MAX_IMAGES}. You already have ${vehicle.images?.length ?? 0}.`);
             e.target.value = "";
             return;
         }
 
-        for (const file of files) {
+        for (const file of newFiles) {
             if (!ALLOWED_TYPES.includes(file.type)) {
                 setFileError("Only JPEG, PNG, and WebP images are allowed.");
                 e.target.value = "";
@@ -76,7 +81,17 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
             }
         }
 
-        setSelectedFiles(files);
+        if (category === 'exterior') setExteriorFiles(prev => [...prev, ...newFiles]);
+        else if (category === 'interior') setInteriorFiles(prev => [...prev, ...newFiles]);
+        else setEngineBayFiles(prev => [...prev, ...newFiles]);
+        
+        e.target.value = "";
+    };
+
+    const removeFile = (category: 'exterior' | 'interior' | 'engineBay', index: number) => {
+        if (category === 'exterior') setExteriorFiles(prev => prev.filter((_, i) => i !== index));
+        else if (category === 'interior') setInteriorFiles(prev => prev.filter((_, i) => i !== index));
+        else setEngineBayFiles(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleDelete = async () => {
@@ -106,9 +121,10 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
             let storageIds = vehicle.images || [];
 
             // Upload new files if any
-            if (selectedFiles.length > 0) {
+            const allFiles = [...exteriorFiles, ...interiorFiles, ...engineBayFiles];
+            if (allFiles.length > 0) {
                 const newStorageIds: Id<"_storage">[] = [];
-                for (const file of selectedFiles) {
+                for (const file of allFiles) {
                     const compressedFile = await compressImage(file, 1200, 0.82);
                     const postUrl = await generateUploadUrl();
                     const result = await fetch(postUrl, {
@@ -320,21 +336,106 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
                         </div>
 
                         {/* V-07 fix: restricted accept types + file size validation */}
-                        <div className="pt-2">
-                            <label className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center space-y-2 hover:border-primary-400 transition-colors cursor-pointer group block">
-                                <Upload className="mx-auto text-slate-300 group-hover:text-primary-500 transition-colors" size={24} />
-                                <p className="text-xs font-bold text-slate-500 group-hover:text-slate-900 transition-colors">
-                                    {selectedFiles.length > 0 ? `${selectedFiles.length} file(s) selected` : "Add more photos"}
-                                </p>
-                                <p className="text-xs text-slate-400">JPEG, PNG or WebP · Max {MAX_FILE_SIZE_MB} MB each</p>
-                                <input
-                                    type="file"
-                                    multiple
-                                    accept="image/jpeg,image/png,image/webp"
-                                    className="hidden"
-                                    onChange={handleFileChange}
-                                />
-                            </label>
+                        <div className="pt-2 space-y-4">
+                            <div>
+                                <h4 className="text-sm font-black text-slate-900">Add More Photos</h4>
+                                <p className="text-xs text-slate-500">Ensure you have Exterior, Interior, and Engine Bay photos covered.</p>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {/* Exterior */}
+                                <div className={`border-2 border-dashed ${exteriorFiles.length > 0 ? 'border-blue-200 bg-blue-50/50' : 'border-slate-200'} rounded-2xl p-4 text-center space-y-2 hover:border-primary-400 transition-colors group block`}>
+                                    <label className="cursor-pointer block">
+                                        <Upload className={`mx-auto ${exteriorFiles.length > 0 ? 'text-blue-500' : 'text-slate-300 group-hover:text-primary-500'} transition-colors`} size={24} />
+                                        <h5 className="font-bold text-slate-800 text-sm">Exterior</h5>
+                                        <p className={`text-xs font-bold ${exteriorFiles.length > 0 ? 'text-blue-600' : 'text-slate-500 group-hover:text-slate-900'} transition-colors`}>
+                                            {exteriorFiles.length > 0 ? `${exteriorFiles.length} file(s)` : "Upload more"}
+                                        </p>
+                                        <input
+                                            type="file"
+                                            multiple
+                                            accept="image/jpeg,image/png,image/webp"
+                                            className="hidden"
+                                            onChange={handleFileChange('exterior')}
+                                        />
+                                    </label>
+                                    {exteriorFiles.length > 0 && (
+                                        <div className="flex flex-wrap justify-center gap-1.5 mt-3 pt-3 border-t border-slate-200/50">
+                                            {exteriorFiles.map((file, i) => (
+                                                <div key={i} className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 group/img">
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+                                                    <button type="button" onClick={() => removeFile('exterior', i)} className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/img:opacity-100 flex items-center justify-center text-white transition-opacity">
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Interior */}
+                                <div className={`border-2 border-dashed ${interiorFiles.length > 0 ? 'border-blue-200 bg-blue-50/50' : 'border-slate-200'} rounded-2xl p-4 text-center space-y-2 hover:border-primary-400 transition-colors group block`}>
+                                    <label className="cursor-pointer block">
+                                        <Upload className={`mx-auto ${interiorFiles.length > 0 ? 'text-blue-500' : 'text-slate-300 group-hover:text-primary-500'} transition-colors`} size={24} />
+                                        <h5 className="font-bold text-slate-800 text-sm">Interior</h5>
+                                        <p className={`text-xs font-bold ${interiorFiles.length > 0 ? 'text-blue-600' : 'text-slate-500 group-hover:text-slate-900'} transition-colors`}>
+                                            {interiorFiles.length > 0 ? `${interiorFiles.length} file(s)` : "Upload more"}
+                                        </p>
+                                        <input
+                                            type="file"
+                                            multiple
+                                            accept="image/jpeg,image/png,image/webp"
+                                            className="hidden"
+                                            onChange={handleFileChange('interior')}
+                                        />
+                                    </label>
+                                    {interiorFiles.length > 0 && (
+                                        <div className="flex flex-wrap justify-center gap-1.5 mt-3 pt-3 border-t border-slate-200/50">
+                                            {interiorFiles.map((file, i) => (
+                                                <div key={i} className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 group/img">
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+                                                    <button type="button" onClick={() => removeFile('interior', i)} className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/img:opacity-100 flex items-center justify-center text-white transition-opacity">
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Engine Bay */}
+                                <div className={`border-2 border-dashed ${engineBayFiles.length > 0 ? 'border-blue-200 bg-blue-50/50' : 'border-slate-200'} rounded-2xl p-4 text-center space-y-2 hover:border-primary-400 transition-colors group block`}>
+                                    <label className="cursor-pointer block">
+                                        <Upload className={`mx-auto ${engineBayFiles.length > 0 ? 'text-blue-500' : 'text-slate-300 group-hover:text-primary-500'} transition-colors`} size={24} />
+                                        <h5 className="font-bold text-slate-800 text-sm">Engine Bay</h5>
+                                        <p className={`text-xs font-bold ${engineBayFiles.length > 0 ? 'text-blue-600' : 'text-slate-500 group-hover:text-slate-900'} transition-colors`}>
+                                            {engineBayFiles.length > 0 ? `${engineBayFiles.length} file(s)` : "Upload more"}
+                                        </p>
+                                        <input
+                                            type="file"
+                                            multiple
+                                            accept="image/jpeg,image/png,image/webp"
+                                            className="hidden"
+                                            onChange={handleFileChange('engineBay')}
+                                        />
+                                    </label>
+                                    {engineBayFiles.length > 0 && (
+                                        <div className="flex flex-wrap justify-center gap-1.5 mt-3 pt-3 border-t border-slate-200/50">
+                                            {engineBayFiles.map((file, i) => (
+                                                <div key={i} className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 group/img">
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+                                                    <button type="button" onClick={() => removeFile('engineBay', i)} className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/img:opacity-100 flex items-center justify-center text-white transition-opacity">
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
 
                         {/* File validation error */}

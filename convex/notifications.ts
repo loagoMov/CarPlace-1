@@ -71,3 +71,24 @@ export const getUnreadCount = query({
         return unread.length;
     }
 });
+
+// Permanently delete a single notification
+export const deleteNotification = mutation({
+    args: { notificationId: v.id("notifications") },
+    handler: async (ctx, args) => {
+        await ctx.db.delete(args.notificationId);
+    }
+});
+
+// Permanently delete ALL notifications for a recipient (clear all)
+export const deleteAllNotifications = mutation({
+    args: { recipientId: v.union(v.id("dealerships"), v.literal("admin")) },
+    handler: async (ctx, args) => {
+        const all = await ctx.db.query("notifications")
+            .withIndex("by_recipient", (q) => q.eq("recipientId", args.recipientId))
+            .collect();
+        for (const notif of all) {
+            await ctx.db.delete(notif._id);
+        }
+    }
+});

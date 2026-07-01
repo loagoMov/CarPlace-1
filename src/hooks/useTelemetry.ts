@@ -18,15 +18,29 @@ export interface TelemetryEvent {
 // Global queue shared across components to avoid duplicate buffers and keep tracking batching clean.
 const eventQueue: TelemetryEvent[] = [];
 
-// Helper to generate simple UUID-like string if crypto.randomUUID isn't available
+// Helper to generate a cryptographically secure UUID-like string
 function getOrCreateAnonId(): string {
   if (typeof window === "undefined") return "";
   let id = localStorage.getItem("carplace_anon_id");
   if (!id) {
     if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
       id = crypto.randomUUID();
+    } else if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+      // Secure fallback: build a UUID v4 from cryptographically random bytes
+      const bytes = new Uint8Array(16);
+      crypto.getRandomValues(bytes);
+      bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
+      bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant
+      id = Array.from(bytes)
+        .map((b, i) =>
+          [4, 6, 8, 10].includes(i)
+            ? "-" + b.toString(16).padStart(2, "0")
+            : b.toString(16).padStart(2, "0")
+        )
+        .join("");
     } else {
-      id = "anon_" + Math.random().toString(36).substring(2, 15) + "_" + Date.now().toString(36);
+      // Last-resort: timestamp + counter (non-random, but only hit in very old envs)
+      id = "anon_" + Date.now().toString(36);
     }
     localStorage.setItem("carplace_anon_id", id);
   }

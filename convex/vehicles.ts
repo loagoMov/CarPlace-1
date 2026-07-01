@@ -219,6 +219,11 @@ export const create = mutation({
         // V-03 fix: verify the caller belongs to the dealership org
         const dealership = await ctx.db.get(args.dealerId);
         if (!dealership) throw new ConvexError("Dealership not found.");
+        
+        if (dealership.accountStatus === "frozen") {
+            throw new ConvexError("Your account is currently frozen. Please settle any outstanding invoices or contact support to resume listing vehicles.");
+        }
+
         const callerOrgId = identity.orgID ?? identity.orgId ?? identity.subject;
         if (dealership.clerkOrgId !== callerOrgId) {
             throw new ConvexError("Forbidden: You cannot create listings for another dealership.");

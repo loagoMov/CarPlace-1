@@ -23,7 +23,10 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
     const generateUploadUrl = useMutation(api.vehicles.generateUploadUrl);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
-    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [showFrozenModal, setShowFrozenModal] = useState(false);
+    const [exteriorFiles, setExteriorFiles] = useState<File[]>([]);
+    const [interiorFiles, setInteriorFiles] = useState<File[]>([]);
+    const [engineBayFiles, setEngineBayFiles] = useState<File[]>([]);
     const [fileError, setFileError] = useState<string | null>(null);
     const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -45,18 +48,21 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
     };
 
     // V-07 fix: validate file MIME type and size before accepting
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = (category: 'exterior' | 'interior' | 'engineBay') => (e: React.ChangeEvent<HTMLInputElement>) => {
         setFileError(null);
         if (!e.target.files) return;
-        const files = Array.from(e.target.files);
+        const newFiles = Array.from(e.target.files);
 
-        if (files.length > MAX_IMAGES) {
-            setFileError(`You can upload at most ${MAX_IMAGES} images.`);
+        const currentTotal = exteriorFiles.length + interiorFiles.length + engineBayFiles.length;
+        const newTotal = currentTotal + newFiles.length;
+
+        if (newTotal > MAX_IMAGES) {
+            setFileError(`You can upload at most ${MAX_IMAGES} images in total.`);
             e.target.value = "";
             return;
         }
 
-        for (const file of files) {
+        for (const file of newFiles) {
             if (!ALLOWED_TYPES.includes(file.type)) {
                 setFileError("Only JPEG, PNG, and WebP images are allowed.");
                 e.target.value = "";
@@ -69,7 +75,17 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
             }
         }
 
-        setSelectedFiles(files);
+        if (category === 'exterior') setExteriorFiles(prev => [...prev, ...newFiles]);
+        else if (category === 'interior') setInteriorFiles(prev => [...prev, ...newFiles]);
+        else setEngineBayFiles(prev => [...prev, ...newFiles]);
+        
+        e.target.value = "";
+    };
+
+    const removeFile = (category: 'exterior' | 'interior' | 'engineBay', index: number) => {
+        if (category === 'exterior') setExteriorFiles(prev => prev.filter((_, i) => i !== index));
+        else if (category === 'interior') setInteriorFiles(prev => prev.filter((_, i) => i !== index));
+        else setEngineBayFiles(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -82,7 +98,8 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
         try {
             // Upload files to Convex Storage first
             const storageIds: Id<"_storage">[] = [];
-            for (const file of selectedFiles) {
+            const allFiles = [...exteriorFiles, ...interiorFiles, ...engineBayFiles];
+            for (const file of allFiles) {
                 // Compress the image before uploading
                 const compressedFile = await compressImage(file, 1200, 0.82);
                 const postUrl = await generateUploadUrl();
@@ -119,7 +136,12 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
             }, 2000);
         } catch (err: any) {
             console.error(err);
-            setSubmitError(err?.message ?? "Failed to create listing. Please try again.");
+            const msg = err?.message ?? "Failed to create listing. Please try again.";
+            if (msg.toLowerCase().includes("frozen")) {
+                setShowFrozenModal(true);
+            } else {
+                setSubmitError(msg);
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -132,6 +154,25 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
                     <CheckCircle2 className="mx-auto text-emerald-500" size={64} />
                     <h3 className="text-2xl font-black text-slate-900">Vehicle Listed!</h3>
                     <p className="text-slate-500 font-medium">Your vehicle has been successfully added to your inventory.</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (showFrozenModal) {
+        return (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center space-y-6 animate-in zoom-in-95 duration-200">
+                    <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mx-auto text-rose-500">
+                        <AlertCircle size={40} />
+                    </div>
+                    <div>
+                        <h3 className="text-2xl font-black text-slate-900 mb-2">Account Frozen</h3>
+                        <p className="text-slate-500 font-medium text-sm">Your account is currently frozen. Please settle any outstanding invoices or contact support to resume listing vehicles.</p>
+                    </div>
+                    <button onClick={onClose} className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold transition-all">
+                        Got it
+                    </button>
                 </div>
             </div>
         );
@@ -226,21 +267,108 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
                         <textarea name="description" rows={3} maxLength={2000} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold resize-none" placeholder="Enter vehicle highlights... (max 2000 characters)" />
                     </div>
 
-                    {/* V-07 fix: restricted accept types + file validation */}
-                    <label className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center space-y-2 hover:border-primary-400 transition-colors cursor-pointer group block">
-                        <Upload className="mx-auto text-slate-300 group-hover:text-primary-500 transition-colors" size={32} />
-                        <p className="text-sm font-bold text-slate-500 group-hover:text-slate-900 transition-colors">
-                            {selectedFiles.length > 0 ? `${selectedFiles.length} file(s) selected` : "Click to upload photos"}
-                        </p>
-                        <p className="text-xs text-slate-400">JPEG, PNG or WebP · Max {MAX_FILE_SIZE_MB} MB each · Max {MAX_IMAGES} photos</p>
-                        <input
-                            type="file"
-                            multiple
-                            accept="image/jpeg,image/png,image/webp"
-                            className="hidden"
-                            onChange={handleFileChange}
-                        />
-                    </label>
+                    {/* Photo Upload Requirements */}
+                    <div className="space-y-4">
+                        <div>
+                            <h4 className="text-sm font-black text-slate-900">Vehicle Photos</h4>
+                            <p className="text-xs text-slate-500">Please provide at least 2 photos for each category (Max {MAX_IMAGES} total).</p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {/* Exterior */}
+                            <div className={`border-2 border-dashed ${exteriorFiles.length >= 2 ? 'border-emerald-200 bg-emerald-50/50' : 'border-slate-200'} rounded-2xl p-4 text-center space-y-2 hover:border-primary-400 transition-colors group block`}>
+                                <label className="cursor-pointer block">
+                                    <Upload className={`mx-auto ${exteriorFiles.length >= 2 ? 'text-emerald-500' : 'text-slate-300 group-hover:text-primary-500'} transition-colors`} size={24} />
+                                    <h5 className="font-bold text-slate-800 text-sm">Exterior</h5>
+                                    <p className={`text-xs font-bold ${exteriorFiles.length >= 2 ? 'text-emerald-600' : 'text-slate-500 group-hover:text-slate-900'} transition-colors`}>
+                                        {exteriorFiles.length > 0 ? `${exteriorFiles.length} file(s)` : "Min. 2 photos"}
+                                    </p>
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept="image/jpeg,image/png,image/webp"
+                                        className="hidden"
+                                        onChange={handleFileChange('exterior')}
+                                    />
+                                </label>
+                                {exteriorFiles.length > 0 && (
+                                    <div className="flex flex-wrap justify-center gap-1.5 mt-3 pt-3 border-t border-slate-200/50">
+                                        {exteriorFiles.map((file, i) => (
+                                            <div key={i} className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 group/img">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+                                                <button type="button" onClick={() => removeFile('exterior', i)} className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/img:opacity-100 flex items-center justify-center text-white transition-opacity">
+                                                    <X size={14} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Interior */}
+                            <div className={`border-2 border-dashed ${interiorFiles.length >= 2 ? 'border-emerald-200 bg-emerald-50/50' : 'border-slate-200'} rounded-2xl p-4 text-center space-y-2 hover:border-primary-400 transition-colors group block`}>
+                                <label className="cursor-pointer block">
+                                    <Upload className={`mx-auto ${interiorFiles.length >= 2 ? 'text-emerald-500' : 'text-slate-300 group-hover:text-primary-500'} transition-colors`} size={24} />
+                                    <h5 className="font-bold text-slate-800 text-sm">Interior</h5>
+                                    <p className={`text-xs font-bold ${interiorFiles.length >= 2 ? 'text-emerald-600' : 'text-slate-500 group-hover:text-slate-900'} transition-colors`}>
+                                        {interiorFiles.length > 0 ? `${interiorFiles.length} file(s)` : "Min. 2 photos"}
+                                    </p>
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept="image/jpeg,image/png,image/webp"
+                                        className="hidden"
+                                        onChange={handleFileChange('interior')}
+                                    />
+                                </label>
+                                {interiorFiles.length > 0 && (
+                                    <div className="flex flex-wrap justify-center gap-1.5 mt-3 pt-3 border-t border-slate-200/50">
+                                        {interiorFiles.map((file, i) => (
+                                            <div key={i} className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 group/img">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+                                                <button type="button" onClick={() => removeFile('interior', i)} className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/img:opacity-100 flex items-center justify-center text-white transition-opacity">
+                                                    <X size={14} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Engine Bay */}
+                            <div className={`border-2 border-dashed ${engineBayFiles.length >= 2 ? 'border-emerald-200 bg-emerald-50/50' : 'border-slate-200'} rounded-2xl p-4 text-center space-y-2 hover:border-primary-400 transition-colors group block`}>
+                                <label className="cursor-pointer block">
+                                    <Upload className={`mx-auto ${engineBayFiles.length >= 2 ? 'text-emerald-500' : 'text-slate-300 group-hover:text-primary-500'} transition-colors`} size={24} />
+                                    <h5 className="font-bold text-slate-800 text-sm">Engine Bay</h5>
+                                    <p className={`text-xs font-bold ${engineBayFiles.length >= 2 ? 'text-emerald-600' : 'text-slate-500 group-hover:text-slate-900'} transition-colors`}>
+                                        {engineBayFiles.length > 0 ? `${engineBayFiles.length} file(s)` : "Min. 2 photos"}
+                                    </p>
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept="image/jpeg,image/png,image/webp"
+                                        className="hidden"
+                                        onChange={handleFileChange('engineBay')}
+                                    />
+                                </label>
+                                {engineBayFiles.length > 0 && (
+                                    <div className="flex flex-wrap justify-center gap-1.5 mt-3 pt-3 border-t border-slate-200/50">
+                                        {engineBayFiles.map((file, i) => (
+                                            <div key={i} className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 group/img">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+                                                <button type="button" onClick={() => removeFile('engineBay', i)} className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/img:opacity-100 flex items-center justify-center text-white transition-opacity">
+                                                    <X size={14} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
 
                     {/* File validation error */}
                     {fileError && (
@@ -260,7 +388,7 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
 
                     <button
                         type="submit"
-                        disabled={isSubmitting || !!fileError}
+                        disabled={isSubmitting || !!fileError || exteriorFiles.length < 2 || interiorFiles.length < 2 || engineBayFiles.length < 2}
                         className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed py-4 sticky bottom-0 z-10"
                     >
                         {isSubmitting ? "Listing Vehicle..." : "Publish Listing"}
