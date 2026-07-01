@@ -49,66 +49,61 @@ export default function AnalyticsDashboard() {
         };
     }).sort((a, b) => b.stats.views - a.stats.views); // Sort by views descending
 
-    const totalViews = vehicleStats.reduce((sum, v) => sum + v.stats.views, 0);
+    const totalViews     = vehicleStats.reduce((sum, v) => sum + v.stats.views, 0);
     const totalFavorites = vehicleStats.reduce((sum, v) => sum + v.stats.favorites, 0);
-    const totalShares = vehicleStats.reduce((sum, v) => sum + v.stats.shares, 0);
-    const totalClicks = vehicleStats.reduce((sum, v) => sum + v.stats.clicks, 0);
+    const totalShares    = vehicleStats.reduce((sum, v) => sum + v.stats.shares, 0);
+    const totalClicks    = vehicleStats.reduce((sum, v) => sum + v.stats.clicks, 0);
+
+    const statCards = [
+        { icon: <Eye className="w-5 h-5 text-blue-500" />,              label: "Total Views",     value: totalViews,     accent: "border-l-blue-400" },
+        { icon: <Heart className="w-5 h-5 text-rose-500" />,            label: "Total Favorites", value: totalFavorites, accent: "border-l-rose-400" },
+        { icon: <Share2 className="w-5 h-5 text-green-500" />,          label: "Total Shares",    value: totalShares,    accent: "border-l-green-400" },
+        { icon: <MousePointerClick className="w-5 h-5 text-amber-500" />, label: "Total Clicks", value: totalClicks,    accent: "border-l-amber-400" },
+    ];
 
     return (
-        <main className="min-h-screen bg-slate-50 pb-24">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div className="flex items-center gap-3">
-                        <Link href="/dashboard" className="p-2 hover:bg-slate-200 rounded-full transition-colors">
-                            <ArrowLeft className="w-6 h-6 text-slate-600" />
-                        </Link>
-                        <div>
-                            <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                                <BarChart className="text-primary-500" /> Listing Analytics
-                            </h1>
-                            <p className="text-slate-500 font-medium">Performance metrics for {dealership.name}</p>
-                        </div>
+        <main className="min-h-screen bg-slate-50 pb-28">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
+
+                {/* ── Header ─────────────────────────────────────────────────── */}
+                <div className="flex items-center gap-3">
+                    <Link
+                        href="/dashboard"
+                        className="touch-target no-tap-highlight p-2 hover:bg-slate-200 rounded-full transition-colors flex-shrink-0"
+                    >
+                        <ArrowLeft className="w-5 h-5 text-slate-600" />
+                    </Link>
+                    <div>
+                        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                            <BarChart className="text-primary-500 w-6 h-6 sm:w-7 sm:h-7" /> Listing Analytics
+                        </h1>
+                        <p className="text-sm text-slate-500 font-medium mt-0.5">Performance metrics for {dealership.name}</p>
                     </div>
                 </div>
 
-                {/* Aggregate Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-center">
-                        <div className="flex items-center gap-2 text-slate-500 font-bold mb-2">
-                            <Eye className="w-5 h-5 text-blue-500" /> Total Views
+                {/* ── Aggregate Stat Cards ────────────────────────────────────── */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                    {statCards.map(({ icon, label, value, accent }) => (
+                        <div key={label} className={`bg-white p-4 sm:p-6 rounded-3xl shadow-sm border border-slate-100 border-l-4 ${accent} flex flex-col justify-center gap-2`}>
+                            <div className="flex items-center gap-2 text-slate-500 font-bold text-xs sm:text-sm">
+                                {icon}
+                                <span className="leading-tight">{label}</span>
+                            </div>
+                            <p className="text-2xl sm:text-3xl font-black text-slate-900">{value}</p>
                         </div>
-                        <p className="text-3xl font-black text-slate-900">{totalViews}</p>
-                    </div>
-                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-center">
-                        <div className="flex items-center gap-2 text-slate-500 font-bold mb-2">
-                            <Heart className="w-5 h-5 text-rose-500" /> Total Favorites
-                        </div>
-                        <p className="text-3xl font-black text-slate-900">{totalFavorites}</p>
-                    </div>
-                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-center">
-                        <div className="flex items-center gap-2 text-slate-500 font-bold mb-2">
-                            <Share2 className="w-5 h-5 text-green-500" /> Total Shares
-                        </div>
-                        <p className="text-3xl font-black text-slate-900">{totalShares}</p>
-                    </div>
-                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-center">
-                        <div className="flex items-center gap-2 text-slate-500 font-bold mb-2">
-                            <MousePointerClick className="w-5 h-5 text-amber-500" /> Total Clicks
-                        </div>
-                        <p className="text-3xl font-black text-slate-900">{totalClicks}</p>
-                    </div>
+                    ))}
                 </div>
 
-                {/* Vehicle Stats Table */}
+                {/* ── Top Performing Listings ─────────────────────────────────── */}
                 <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
-                    <div className="p-6 border-b border-slate-100">
-                        <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                    <div className="p-4 sm:p-6 border-b border-slate-100">
+                        <h2 className="text-lg sm:text-xl font-bold text-slate-900 flex items-center gap-2">
                             <TrendingUp className="text-primary-500 w-5 h-5" /> Top Performing Listings
                         </h2>
                     </div>
-                    
-                    <div className="overflow-x-auto">
+
+                    {/* Desktop Table (md+) */}
+                    <div className="hidden md:block overflow-x-auto">
                         <table className="w-full text-left">
                             <thead>
                                 <tr className="bg-slate-50/50 border-b border-slate-100">
@@ -130,12 +125,8 @@ export default function AnalyticsDashboard() {
                                 {vehicleStats.map((v) => (
                                     <tr key={v._id} className="hover:bg-slate-50/50 transition-colors">
                                         <td className="px-6 py-4">
-                                            <div className="flex items-center gap-4">
-                                                <div>
-                                                    <p className="font-bold text-slate-900">{v.year} {v.make} {v.model}</p>
-                                                    <p className="text-sm font-medium text-slate-500">P{v.price.toLocaleString()}</p>
-                                                </div>
-                                            </div>
+                                            <p className="font-bold text-slate-900">{v.year} {v.make} {v.model}</p>
+                                            <p className="text-sm font-medium text-slate-500">P{v.price.toLocaleString()}</p>
                                         </td>
                                         <td className="px-6 py-4 text-center font-bold text-slate-700">{v.stats.views}</td>
                                         <td className="px-6 py-4 text-center font-bold text-slate-700">{v.stats.favorites}</td>
@@ -146,7 +137,41 @@ export default function AnalyticsDashboard() {
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Mobile Card List (< md) */}
+                    <div className="flex md:hidden flex-col divide-y divide-slate-100">
+                        {vehicleStats.length === 0 && (
+                            <p className="py-8 text-center text-slate-400 text-sm">No listings found.</p>
+                        )}
+                        {vehicleStats.map((v) => (
+                            <div key={v._id} className="p-4 space-y-3">
+                                {/* Vehicle name & price */}
+                                <div>
+                                    <p className="font-black text-slate-900 text-sm">{v.year} {v.make} {v.model}</p>
+                                    <p className="text-xs font-medium text-slate-500">P{v.price.toLocaleString()}</p>
+                                </div>
+                                {/* Stats 2×2 grid */}
+                                <div className="grid grid-cols-2 gap-2">
+                                    {[
+                                        { icon: <Eye className="w-3.5 h-3.5 text-blue-500" />,               label: "Views",     value: v.stats.views,     bg: "bg-blue-50" },
+                                        { icon: <Heart className="w-3.5 h-3.5 text-rose-500" />,             label: "Favorites", value: v.stats.favorites, bg: "bg-rose-50" },
+                                        { icon: <Share2 className="w-3.5 h-3.5 text-green-500" />,           label: "Shares",    value: v.stats.shares,    bg: "bg-green-50" },
+                                        { icon: <MousePointerClick className="w-3.5 h-3.5 text-amber-500" />, label: "Clicks",   value: v.stats.clicks,    bg: "bg-amber-50" },
+                                    ].map(({ icon, label, value, bg }) => (
+                                        <div key={label} className={`${bg} rounded-xl px-3 py-2 flex items-center gap-2`}>
+                                            {icon}
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 leading-none">{label}</p>
+                                                <p className="text-base font-black text-slate-900">{value}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
+
             </div>
             <MobileNav />
         </main>

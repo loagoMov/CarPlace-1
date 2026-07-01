@@ -12,6 +12,13 @@ export const metadata = {
     description: "CarPlace is Botswana's premier digital car marketplace connecting buyers with trusted dealerships in Gaborone and across the country.",
 };
 
+// Required for env(safe-area-inset-*) CSS variables to work on iOS
+export const viewport = {
+    width: "device-width",
+    initialScale: 1,
+    viewportFit: "cover",
+};
+
 export default function RootLayout({
     children,
 }: {

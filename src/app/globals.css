@@ -94,3 +94,34 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* ─── Mobile / Native-App Utilities ─────────────────────────────────────── */
+
+/* Safe-area bottom padding (iPhone home indicator, Android nav bar) */
+.pb-safe {
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+}
+
+.pb-safe-sm {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+/* Apple HIG / Material minimum tap target: 44 × 44 px */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Suppress blue flash on interactive elements on mobile browsers */
+.no-tap-highlight {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth momentum scrolling inside panels */
+.scroll-momentum {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+}
