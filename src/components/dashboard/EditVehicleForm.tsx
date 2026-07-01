@@ -8,7 +8,7 @@ import { X, Upload, CheckCircle2, Loader2, Trash2, AlertTriangle, AlertCircle } 
 import Image from "next/image";
 import { compressImage } from "@/utils/imageCompressor";
 
-// ─── Security constants ───────────────────────────────────────────────────────
+// ─── Security constants ────────────────────────────────────────────────────────
 const MAX_FILE_SIZE_MB = 5;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 const MAX_IMAGES = 10;
@@ -241,32 +241,32 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
                         <div className="grid grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Make</label>
-                                <input name="make" defaultValue={vehicle.make} required maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold" />
+                                <input name="make" defaultValue={vehicle.make} required maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all" />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Model</label>
-                                <input name="model" defaultValue={vehicle.model} required maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold" />
+                                <input name="model" defaultValue={vehicle.model} required maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all" />
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Year</label>
-                                <input name="year" type="number" defaultValue={vehicle.year} required min={1900} max={2030} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold px-3" />
+                                <input name="year" type="number" defaultValue={vehicle.year} required min={1900} max={2030} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all" />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1 whitespace-nowrap">Mileage (km)</label>
-                                <input type="text" value={mileageInput} onChange={handleMileageChange} required className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold px-3" />
+                                <input type="text" value={mileageInput} onChange={handleMileageChange} required className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all" />
                                 <input type="hidden" name="mileage" value={mileageInput.replace(/\D/g, "")} />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Price (P)</label>
-                                <input type="text" value={priceInput} onChange={handlePriceChange} required className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold px-3" />
+                                <input type="text" value={priceInput} onChange={handlePriceChange} required className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all" />
                                 <input type="hidden" name="price" value={priceInput.replace(/\D/g, "")} />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Status</label>
-                                <select name="status" defaultValue={vehicle.status} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold appearance-none cursor-pointer px-3">
+                                <select name="status" defaultValue={vehicle.status} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all">
                                     <option value="available">Available</option>
                                     <option value="reserved">Reserved</option>
                                     <option value="sold">Sold</option>
@@ -276,7 +276,7 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
 
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Category</label>
-                            <select name="category" defaultValue={vehicle.category} required className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold appearance-none cursor-pointer">
+                            <select name="category" defaultValue={vehicle.category} required className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all">
                                 <option value="">Select Category</option>
                                 <option value="suv">SUV</option>
                                 <option value="sedan">Sedan</option>
@@ -292,7 +292,7 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Fuel Type</label>
-                                <select name="fuelType" defaultValue={vehicle.fuelType} required className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold appearance-none cursor-pointer">
+                                <select name="fuelType" defaultValue={vehicle.fuelType} required className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all">
                                     <option value="Petrol">Petrol</option>
                                     <option value="Diesel">Diesel</option>
                                     <option value="Hybrid">Hybrid</option>
@@ -301,7 +301,7 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Transmission</label>
-                                <select name="transmission" defaultValue={vehicle.transmission} required className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold appearance-none cursor-pointer">
+                                <select name="transmission" defaultValue={vehicle.transmission} required className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all">
                                     <option value="Automatic">Automatic</option>
                                     <option value="Manual">Manual</option>
                                 </select>
@@ -311,17 +311,17 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Engine Size</label>
-                                <input name="engineSize" defaultValue={vehicle.engineSize} maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold" placeholder="e.g. 2.8L" />
+                                <input name="engineSize" defaultValue={vehicle.engineSize} maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all" />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Color</label>
-                                <input name="color" defaultValue={vehicle.color} maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold" placeholder="e.g. White" />
+                                <input name="color" defaultValue={vehicle.color} maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all" />
                             </div>
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Description</label>
-                            <textarea name="description" defaultValue={vehicle.description} rows={3} maxLength={2000} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm font-bold resize-none" />
+                            <textarea name="description" defaultValue={vehicle.description} rows={3} maxLength={2000} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all" />
                         </div>
 
                         <div className="space-y-4 pt-2">
@@ -344,7 +344,7 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
                             
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 {/* Exterior */}
-                                <div className={`border-2 border-dashed ${exteriorFiles.length > 0 ? 'border-blue-200 bg-blue-50/50' : 'border-slate-200'} rounded-2xl p-4 text-center space-y-2 hover:border-primary-400 transition-colors group block`}>
+                                <div className={`border-2 border-dashed ${exteriorFiles.length > 0 ? 'border-blue-200 bg-blue-50/50' : 'border-slate-200'} rounded-2xl p-4 text-center space-y-2 hover:border-blue-300 transition-colors group`}>
                                     <label className="cursor-pointer block">
                                         <Upload className={`mx-auto ${exteriorFiles.length > 0 ? 'text-blue-500' : 'text-slate-300 group-hover:text-primary-500'} transition-colors`} size={24} />
                                         <h5 className="font-bold text-slate-800 text-sm">Exterior</h5>
@@ -363,8 +363,13 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
                                         <div className="flex flex-wrap justify-center gap-1.5 mt-3 pt-3 border-t border-slate-200/50">
                                             {exteriorFiles.map((file, i) => (
                                                 <div key={i} className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 group/img">
-                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                    <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+                                                    <Image 
+                                                        src={URL.createObjectURL(file)} 
+                                                        alt="preview" 
+                                                        fill
+                                                        sizes="40px"
+                                                        className="w-full h-full object-cover" 
+                                                    />
                                                     <button type="button" onClick={() => removeFile('exterior', i)} className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/img:opacity-100 flex items-center justify-center text-white transition-opacity">
                                                         <X size={14} />
                                                     </button>
@@ -375,7 +380,7 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
                                 </div>
 
                                 {/* Interior */}
-                                <div className={`border-2 border-dashed ${interiorFiles.length > 0 ? 'border-blue-200 bg-blue-50/50' : 'border-slate-200'} rounded-2xl p-4 text-center space-y-2 hover:border-primary-400 transition-colors group block`}>
+                                <div className={`border-2 border-dashed ${interiorFiles.length > 0 ? 'border-blue-200 bg-blue-50/50' : 'border-slate-200'} rounded-2xl p-4 text-center space-y-2 hover:border-blue-300 transition-colors group`}>
                                     <label className="cursor-pointer block">
                                         <Upload className={`mx-auto ${interiorFiles.length > 0 ? 'text-blue-500' : 'text-slate-300 group-hover:text-primary-500'} transition-colors`} size={24} />
                                         <h5 className="font-bold text-slate-800 text-sm">Interior</h5>
@@ -394,8 +399,13 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
                                         <div className="flex flex-wrap justify-center gap-1.5 mt-3 pt-3 border-t border-slate-200/50">
                                             {interiorFiles.map((file, i) => (
                                                 <div key={i} className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 group/img">
-                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                    <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+                                                    <Image 
+                                                        src={URL.createObjectURL(file)} 
+                                                        alt="preview" 
+                                                        fill
+                                                        sizes="40px"
+                                                        className="w-full h-full object-cover" 
+                                                    />
                                                     <button type="button" onClick={() => removeFile('interior', i)} className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/img:opacity-100 flex items-center justify-center text-white transition-opacity">
                                                         <X size={14} />
                                                     </button>
@@ -406,7 +416,7 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
                                 </div>
 
                                 {/* Engine Bay */}
-                                <div className={`border-2 border-dashed ${engineBayFiles.length > 0 ? 'border-blue-200 bg-blue-50/50' : 'border-slate-200'} rounded-2xl p-4 text-center space-y-2 hover:border-primary-400 transition-colors group block`}>
+                                <div className={`border-2 border-dashed ${engineBayFiles.length > 0 ? 'border-blue-200 bg-blue-50/50' : 'border-slate-200'} rounded-2xl p-4 text-center space-y-2 hover:border-blue-300 transition-colors group`}>
                                     <label className="cursor-pointer block">
                                         <Upload className={`mx-auto ${engineBayFiles.length > 0 ? 'text-blue-500' : 'text-slate-300 group-hover:text-primary-500'} transition-colors`} size={24} />
                                         <h5 className="font-bold text-slate-800 text-sm">Engine Bay</h5>
@@ -425,8 +435,13 @@ export default function EditVehicleForm({ vehicle, onClose }: EditVehicleFormPro
                                         <div className="flex flex-wrap justify-center gap-1.5 mt-3 pt-3 border-t border-slate-200/50">
                                             {engineBayFiles.map((file, i) => (
                                                 <div key={i} className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 group/img">
-                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                    <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+                                                    <Image 
+                                                        src={URL.createObjectURL(file)} 
+                                                        alt="preview" 
+                                                        fill
+                                                        sizes="40px"
+                                                        className="w-full h-full object-cover" 
+                                                    />
                                                     <button type="button" onClick={() => removeFile('engineBay', i)} className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/img:opacity-100 flex items-center justify-center text-white transition-opacity">
                                                         <X size={14} />
                                                     </button>
