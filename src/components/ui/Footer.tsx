@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { MapPin, Shield } from "lucide-react";
-import { useOrganization, useUser } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 
 export default function Footer() {
-    const { organization, isLoaded: orgLoaded } = useOrganization();
+    const { orgId, isLoaded: orgLoaded } = useAuth();
     const { user, isLoaded: userLoaded } = useUser();
 
     const emailSubject = encodeURIComponent("CarPlace Dealer Account Application");
@@ -48,7 +48,7 @@ export default function Footer() {
                         <div className="space-y-3">
                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Dealers</p>
                             <div className="space-y-2">
-                                {orgLoaded && organization ? (
+                                {orgLoaded && orgId ? (
                                     <>
                                         <Link href="/dashboard" className="block font-medium text-slate-600 hover:text-primary-600 transition-colors">Dealer Portal</Link>
                                         <Link href="/dashboard/analytics" className="block font-medium text-slate-600 hover:text-primary-600 transition-colors">Analytics</Link>

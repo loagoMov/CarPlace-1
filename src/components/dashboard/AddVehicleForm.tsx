@@ -216,34 +216,34 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Make</label>
-                            <input name="make" required maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500" />
+                            <input name="make" required maxLength={50} placeholder="e.g. Toyota" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 font-sans text-sm text-slate-900" />
                         </div>
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Model</label>
-                            <input name="model" required maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500" />
+                            <input name="model" required maxLength={50} placeholder="e.g. Hilux" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 font-sans text-sm text-slate-900" />
                         </div>
                     </div>
 
                     <div className="grid grid-cols-3 gap-4">
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Year</label>
-                            <input name="year" type="number" required min={1900} max={2030} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500" />
+                            <input name="year" type="number" required min={1900} max={2030} placeholder="e.g. 2018" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 font-sans text-sm text-slate-900" />
                         </div>
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Mileage (km)</label>
-                            <input type="text" value={mileageInput} onChange={handleMileageChange} required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500" />
+                            <input type="text" value={mileageInput} onChange={handleMileageChange} required placeholder="e.g. 45,000" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 font-sans text-sm text-slate-900" />
                             <input type="hidden" name="mileage" value={mileageInput.replace(/\D/g, "")} />
                         </div>
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Price (BWP)</label>
-                            <input type="text" value={priceInput} onChange={handlePriceChange} required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500" />
+                            <input type="text" value={priceInput} onChange={handlePriceChange} required placeholder="e.g. 250,000" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 font-sans text-sm text-slate-900" />
                             <input type="hidden" name="price" value={priceInput.replace(/\D/g, "")} />
                         </div>
                     </div>
 
                     <div className="space-y-2">
                         <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Category</label>
-                        <select name="category" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500">
+                        <select name="category" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 font-sans text-sm text-slate-900">
                             <option value="">Select Category</option>
                             <option value="suv">SUV</option>
                             <option value="sedan">Sedan</option>
@@ -259,7 +259,7 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Fuel Type</label>
-                            <select name="fuelType" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500">
+                            <select name="fuelType" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 font-sans text-sm text-slate-900">
                                 <option value="Petrol">Petrol</option>
                                 <option value="Diesel">Diesel</option>
                                 <option value="Hybrid">Hybrid</option>
@@ -268,7 +268,7 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
                         </div>
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Transmission</label>
-                            <select name="transmission" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500">
+                            <select name="transmission" required className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 font-sans text-sm text-slate-900">
                                 <option value="Automatic">Automatic</option>
                                 <option value="Manual">Manual</option>
                             </select>
@@ -278,17 +278,17 @@ export default function AddVehicleForm({ dealerId, onClose }: AddVehicleFormProp
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Engine Size</label>
-                            <input name="engineSize" maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500" />
+                            <input name="engineSize" maxLength={50} placeholder="e.g. 2.8L" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 font-sans text-sm text-slate-900" />
                         </div>
                         <div className="space-y-2">
                             <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Color</label>
-                            <input name="color" maxLength={50} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500" />
+                            <input name="color" maxLength={50} placeholder="e.g. White" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 font-sans text-sm text-slate-900" />
                         </div>
                     </div>
 
                     <div className="space-y-2">
                         <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 pl-1">Description</label>
-                        <textarea name="description" rows={3} maxLength={2000} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500" />
+                        <textarea name="description" rows={3} maxLength={2000} placeholder="Tell us more about the vehicle's condition, features, and history..." className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 font-sans text-sm text-slate-900" />
                     </div>
 
                     {/* Photo Upload Requirements */}

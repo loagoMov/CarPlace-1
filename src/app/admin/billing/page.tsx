@@ -5,11 +5,12 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 import NotificationCenter from "../../components/NotificationCenter";
+import { useUser, UserButton } from "@clerk/nextjs";
 import {
     FileText, Users, Activity, CheckCircle2, AlertTriangle,
     FileSpreadsheet, PlusCircle, ChevronLeft, CreditCard,
     Clock, TrendingUp, Building2, ChevronDown, ChevronUp,
-    ExternalLink, Loader2
+    ExternalLink, Loader2, Shield
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -42,6 +43,8 @@ function HealthBadge({ health }: { health: "good" | "warning" | "critical" }) {
 
 export default function AdminBillingPage() {
     const router = useRouter();
+    const { user, isLoaded } = useUser();
+    const isGlobalAdmin = useQuery(api.dealerships.checkGlobalAdmin);
     const [csvInput, setCsvInput] = useState("");
     const [evaluatedRows, setEvaluatedRows] = useState<EvaluatedRow[]>([]);
     const [selectedDealerIds, setSelectedDealerIds] = useState<{ [k: number]: string }>({});
@@ -160,6 +163,37 @@ export default function AdminBillingPage() {
         setEvaluatedRows(prev => prev.filter((_, i) => i !== index));
     };
 
+    // ─── Auth guard (defense-in-depth; layout.tsx is the primary gate) ─────
+    if (!isLoaded || isGlobalAdmin === undefined) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+                <Loader2 className="w-10 h-10 text-primary-500 animate-spin" />
+            </div>
+        );
+    }
+
+    if (!isGlobalAdmin) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8 text-center">
+                <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100 max-w-md w-full space-y-6">
+                    <div className="w-20 h-20 bg-rose-50 rounded-3xl flex items-center justify-center mx-auto text-rose-500">
+                        <Shield size={40} />
+                    </div>
+                    <h2 className="text-2xl font-black text-slate-900">Access Denied</h2>
+                    <p className="text-slate-500 text-sm font-medium">
+                        Only global administrators can access the billing portal.
+                    </p>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                        Signed in as:{" "}
+                        <span className="lowercase text-slate-600">
+                            {user?.primaryEmailAddress?.emailAddress || "Guest"}
+                        </span>
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-slate-50">
             {/* Header */}
@@ -185,6 +219,7 @@ export default function AdminBillingPage() {
                             {isSyncConnected ? "Live" : "Disconnected"}
                         </div>
                         <NotificationCenter recipientId="admin" />
+                        <UserButton />
                     </div>
                 </div>
             </header>

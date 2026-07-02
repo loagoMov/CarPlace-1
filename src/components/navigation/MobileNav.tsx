@@ -3,14 +3,13 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, Store, User, LayoutDashboard, LogIn, Shield } from "lucide-react";
-import { useOrganization, useAuth, SignInButton, useUser } from "@clerk/nextjs";
+import { Home, Search, Store, LayoutDashboard, Shield } from "lucide-react";
+import { useAuth, SignInButton, useUser, UserButton } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 
 export default function MobileNav() {
-    const { organization, isLoaded: orgLoaded } = useOrganization();
-    const { isSignedIn, isLoaded: authLoaded } = useAuth();
+    const { isSignedIn, isLoaded: authLoaded, orgId } = useAuth();
     const { user } = useUser();
     const isGlobalAdmin = useQuery(api.dealerships.checkGlobalAdmin);
     const pathname = usePathname();
@@ -38,9 +37,8 @@ export default function MobileNav() {
         { href: "/", icon: Home, label: "Home", exact: true },
         { href: "/search", icon: Search, label: "Search" },
         { href: "/dealers", icon: Store, label: "Dealers" },
-        ...(orgLoaded && organization ? [{ href: "/dashboard", icon: LayoutDashboard, label: "Dealer" }] : []),
+        ...(authLoaded && orgId ? [{ href: "/dashboard", icon: LayoutDashboard, label: "Dealer" }] : []),
         ...(isGlobalAdmin ? [{ href: "/admin", icon: Shield, label: "Admin" }] : []),
-        ...(authLoaded && isSignedIn ? [{ href: "/profile", icon: User, label: "Profile" }] : []),
     ];
 
     const activeTab = tabs.find(t => t.exact ? pathname === t.href : pathname?.startsWith(t.href)) ?? tabs[0];
@@ -83,7 +81,7 @@ export default function MobileNav() {
             <NavLink href="/search" icon={Search} label="Search" />
             <NavLink href="/dealers" icon={Store} label="Dealers" />
 
-            {orgLoaded && organization && (
+            {authLoaded && orgId && (
                 <NavLink href="/dashboard" icon={LayoutDashboard} label="Dealer" />
             )}
 
@@ -92,12 +90,21 @@ export default function MobileNav() {
             )}
 
             {authLoaded && isSignedIn ? (
-                <NavLink href="/profile" icon={User} label="Profile" />
+                <div className="flex flex-col items-center gap-1 py-2 px-3 min-w-[60px]">
+                    <UserButton
+                        appearance={{
+                            elements: {
+                                avatarBox: "w-7 h-7",
+                            },
+                        }}
+                    />
+                    <span className="text-[9px] font-medium tracking-tight text-slate-500">Account</span>
+                </div>
             ) : (
                 <SignInButton mode="modal">
                     <button className="flex flex-col items-center gap-1 transition-all duration-200 relative py-2 px-3 rounded-xl min-w-[60px] active:scale-95 text-slate-500 hover:text-primary-600 bg-transparent border-none p-0 cursor-pointer">
                         <div className="p-1.5 rounded-lg">
-                            <LogIn size={20} />
+                            <Shield size={20} />
                         </div>
                         <span className="text-[9px] font-medium tracking-tight">Sign In</span>
                     </button>
